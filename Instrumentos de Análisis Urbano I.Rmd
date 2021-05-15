@@ -1,7 +1,0 @@
----
-title: "Instrumentos de Análisis Urbano I"
-author: "Florencia Kihara, Santiago Soubie y Victoria Marco"
-date: "15/5/2021"
-output: html_document
----
-
