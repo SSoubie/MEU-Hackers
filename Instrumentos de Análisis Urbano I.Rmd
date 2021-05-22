@@ -14,3 +14,5 @@ library(leaflet)
 str()
 ```
 
+
+calles <- read_sf("https://github.com/SSoubie/MEU-Hackers/blob/main/Datasets/callejero.geojson")
