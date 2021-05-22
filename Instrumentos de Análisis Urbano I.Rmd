@@ -24,17 +24,3 @@ properati2021 <- properati %>%
   select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6)
 ```
 
-
-```{r}
-calles <- st_read("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento de Analisis Urbano/TP/Datasets/callejero.geojson")
-```
-
-```{r}
-estaciones <- st_read("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento de Analisis Urbano/TP/Datasets/estacionsubte.geojson")
-```
-
-```{r}
-properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento de Analisis Urbano/TP/Datasets/rent_properati_2020_2021.csv",
-                      encoding = "UTF-8",
-                      stringsAsFactors = TRUE)
-```
