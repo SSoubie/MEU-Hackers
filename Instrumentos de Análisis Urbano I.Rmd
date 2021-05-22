@@ -4,6 +4,27 @@ author: "Florencia Kihara, Santiago Soubie y Victoria Marco"
 date: "15/5/2021"
 output: html_document
 ---
+# **TRABAJO PRÁCTICO FINAL**
+
+*INTEGRANTES*
+  - Florencia Kihara
+  - Victoria Marco
+  - Santiago Soubie
+
+**Consigna**
+
+*Debido a la pandemia del COVID-19, el Gobierno de la Ciudad de Buenos Aires tomó la decisión de reutilizar la capacidad hotelera preexistente para poder mejorar la capacidad de atención sanitaria para la población. Sin embargo, encontrar las ubicaciones óptimas no es una tarea trivial.*
+
+*Por un lado, el presupuesto con el que cuenta el GCBA es limitado. Por otro lado, la zona donde estén estos nuevos centros de atención de pacientes va a depender de distintos factores como la accesibilidad y la densidad poblacional.*
+
+*El objetivo de este trabajo es poder indicar las manzanas de la Ciudad de Buenos Aires de mayor viabilidad para el alquiler de algún inmueble en base a los siguientes criterios:*
+
+*● Costo promedio de alquiler*
+
+*● Métricas de accesibilidad (cercanía con avenidas, cercanía con una estación de subte y cualquier otra variable que les pueda parecer útil, tiempo de viaje, en minutos caminando o en auto, desde distintos puntos de la Ciudad)*
+
+*● Densidad poblacional*
+
 ```{r}
 library(tidyverse)
 library(sf)
