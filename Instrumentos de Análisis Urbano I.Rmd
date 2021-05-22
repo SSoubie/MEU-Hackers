@@ -16,3 +16,10 @@ str()
 
 
 calles <- read_sf("https://github.com/SSoubie/MEU-Hackers/blob/main/Datasets/callejero.geojson")
+
+```{r}
+properati2021 <- properati %>% 
+  separate(created_on, c("ano", "mes", "dia"), sep = "-") %>% 
+  filter(ano=="2021" & l2=="Capital Federal" & price!="NA") %>% 
+  select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6)
+```
