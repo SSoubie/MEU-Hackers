@@ -1,7 +1,7 @@
 ---
 title: "Instrumentos de Análisis Urbano I"
-author: "Florencia Kihara, Santiago Soubie y Victoria Marco"
-date: "15/5/2021"
+author: "Florencia Kihara,  Victoria Marco y Santiago Soubie"
+date: "6/6/2021"
 output: html_document
 ---
 # **TRABAJO PRÁCTICO FINAL**
@@ -35,35 +35,24 @@ library(leaflet)
 str()
 ```
 
+```{r}
 calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
 ```
 
 
 ```{r}
-
 radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/radioscensales.geojson")
-
 
 ```
 
 ```{r}
 hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
 hospitales <- st_as_sf(hospitales)
-                       
+ ```                      
 
-manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
-
-
----
-title: "Instrumentos de Análisis Urbano I"
-author: "Florencia Kihara, Santiago Soubie y Victoria Marco"
-date: "15/5/2021"
-output: html_document
----
 ```{r}
-library(tidyverse)
-library(sf)
-```
+manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
+ ```                      
 
 
 ```{r}
@@ -102,7 +91,6 @@ manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/
 
 ```
 
-
 ```{r}
 str(properati2021$currency)
 ```
@@ -138,7 +126,6 @@ Ahora, vamos a filtrar la variable "property_type" con el fin de poder obtener e
 properati2021 <- filter(properati2021, property_type %in% c("Casa", "Departamento", "Local comercial", "Oficina"))
 ```
 
-
 ```{r}
 summary(properati2021$property_type)
 ```
@@ -167,7 +154,6 @@ summary(properati2021$surface_total)
 properati2021 <- mutate(properati2021, metro2=precio/surface_total)
 ```
 
-
 ```{r}
 str(properati2021)
 ```
@@ -190,6 +176,4 @@ summary(properati2021$catmetro2)
 ```{r}
 properati2021 <- mutate(properati2021, cat2metro2=as.numeric(catmetro2))
 ```
-
-
 
