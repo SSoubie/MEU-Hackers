@@ -53,3 +53,143 @@ hospitales <- st_as_sf(hospitales)
 
 manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
 
+
+---
+title: "Instrumentos de Análisis Urbano I"
+author: "Florencia Kihara, Santiago Soubie y Victoria Marco"
+date: "15/5/2021"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(sf)
+```
+
+
+```{r}
+calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/alojamientos.geojson?token=AUCZCWGKW4JQAOBXHJPMZELAVFZHM")
+```
+
+```{r}
+properati <- read.csv("rent_properati_2020_2021.csv",
+                      encoding = "UTF-8",
+                      stringsAsFactors = TRUE)
+```
+
+```{r}
+str(properati)
+```
+
+```{r}
+properati2021 <- properati %>% 
+  separate(created_on, c("ano", "mes", "dia"), sep = "-") %>% 
+  filter(ano=="2021" & l2=="Capital Federal" & price!="NA") %>% 
+  select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6)
+```
+
+```{r}
+str(properati2021)
+```
+
+```{r}
+radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/radioscensales.geojson")
+```
+
+```{r}
+hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
+                       
+manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
+
+```
+
+
+```{r}
+str(properati2021$currency)
+```
+```{r}
+summary(properati2021$currency)
+```
+Ahora limpiaremos la base de properati para poder dejar la inforamción que nos es de interés para este TP. 
+En primer lugar, extraemos el año de la columna "created_on" para poder filtrar los casos del año 2021. 
+En adición, hemos dejado solamente los registros donde hay información precisa (por eso descartamos aquellos que no tenían precio) para la Ciudad de Buenos Aires.
+Además, pesificamos los precios al dólar blue ($150) de aquellos registros que estaban en dólares para poder tener la misma unidad para todos. 
+Por último, eliminamos las columnas que no serían de utilidad para el análisis que realizaremos. 
+
+```{r}
+properati2021 <- properati %>% 
+  separate(created_on, c("ano", "mes", "dia"), sep = "-") %>% 
+  filter(ano=="2021" & l2=="Capital Federal" & price!="NA" & currency!="") %>% 
+  mutate(precio=ifelse(currency=="USD", price*150, price*1)) %>% 
+  select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6, -price, -currency)
+```
+
+
+```{r}
+summary(properati2021$operation_type)
+```
+```{r}
+summary(properati2021$property_type)
+```
+
+Ahora, vamos a filtrar la variable "property_type" con el fin de poder obtener el valor del metro cuadrado de propiedades de la zona, con el fin de poder crear luego un índice que nos permita cumplir con el objetivo del TP. En este sentido, no tendremos en consideración los valores para las siguientes propiedades: Lote, Casa de Campo, Cochera, PH, Depóstito y Otro (debido a que no sabemos qué tipo de propiedad es).
+
+
+```{r}
+properati2021 <- filter(properati2021, property_type %in% c("Casa", "Departamento", "Local comercial", "Oficina"))
+```
+
+
+```{r}
+summary(properati2021$property_type)
+```
+
+Ahora calcularemos el precio del metro cuadrado.
+
+```{r}
+summary(properati2021$surface_total)
+```
+```{r}
+summary(properati2021$surface_covered)
+```
+
+```{r}
+properati2021 <- filter(properati2021, !(surface_covered=="NA" & surface_total=="NA"))
+```
+
+```{r}
+summary(properati2021$surface_covered)
+```
+```{r}
+summary(properati2021$surface_total)
+```
+
+```{r}
+properati2021 <- mutate(properati2021, metro2=precio/surface_total)
+```
+
+
+```{r}
+str(properati2021)
+```
+```{r}
+summary(properati2021$metro2)
+```
+
+```{r}
+quiebres <- c(0,0.2,0.4,0.6,0.8,1)
+```
+
+```{r}
+properati2021 <- mutate(properati2021, catmetro2=cut(metro2,breaks = quantile(metro2,quiebres,na.rm = TRUE ),include.lowest = TRUE))
+```
+
+```{r}
+summary(properati2021$catmetro2)
+```
+
+```{r}
+properati2021 <- mutate(properati2021, cat2metro2=as.numeric(catmetro2))
+```
+
+
+
