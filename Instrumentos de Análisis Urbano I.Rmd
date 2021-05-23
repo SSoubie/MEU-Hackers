@@ -56,7 +56,7 @@ calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Da
 ```
 
 ```{r}
-properati <- read.csv("rent_properati_2020_2021.csv",
+properati <- read.csv("https://github.com/SSoubie/MEU-Hackers/blob/main/Datasets/properati2021.RData",
                       encoding = "UTF-8",
                       stringsAsFactors = TRUE)
 ```
