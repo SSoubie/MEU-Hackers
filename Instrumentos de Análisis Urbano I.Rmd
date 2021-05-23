@@ -111,9 +111,6 @@ properati2021 <- properati %>%
 ```{r}
 summary(properati2021$operation_type)
 ```
-```{r}
-summary(properati2021$property_type)
-```
 
 Ahora, vamos a filtrar la variable "property_type" con el fin de poder obtener el valor del metro cuadrado de propiedades de la zona, con el fin de poder crear luego un índice que nos permita cumplir con el objetivo del TP. En este sentido, no tendremos en consideración los valores para las siguientes propiedades: Lote, Casa de Campo, Cochera, PH, Depóstito y Otro (debido a que no sabemos qué tipo de propiedad es).
 
