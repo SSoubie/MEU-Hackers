@@ -13,7 +13,7 @@ output: html_document
 
 **Consigna**
 
-*Debido a la pandemia del COVID-19, el Gobierno de la Ciudad de Buenos Aires tomó la decisión de reutilizar la capacidad hotelera preexistente para poder mejorar la capacidad de atención sanitaria para la población. Sin embargo, encontrar las ubicaciones óptimas no es una tarea trivial.*
+*Debido a la pandemia del COVID-19, el Gobierno de la Ciudad Autónoma de Buenos Aires tomó la decisión de reutilizar la capacidad hotelera preexistente para poder mejorar la capacidad de atención sanitaria para la población. Sin embargo, encontrar las ubicaciones óptimas no es una tarea trivial.*
 
 *Por un lado, el presupuesto con el que cuenta el GCBA es limitado. Por otro lado, la zona donde estén estos nuevos centros de atención de pacientes va a depender de distintos factores como la accesibilidad y la densidad poblacional.*
 
@@ -35,7 +35,6 @@ library(leaflet)
 calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
 ```
 
-
 ```{r}
 radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/radioscensales.geojson")
 
@@ -44,11 +43,11 @@ radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers
 ```{r}
 hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
 hospitales <- st_as_sf(hospitales)
- ```                      
+```                      
 
 ```{r}
 manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
- ```                      
+```                      
 
 
 ```{r}
