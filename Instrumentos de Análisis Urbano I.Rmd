@@ -32,10 +32,6 @@ library(leaflet)
 ```
 
 ```{r}
-str()
-```
-
-```{r}
 calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
 ```
 
