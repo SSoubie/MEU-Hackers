@@ -159,4 +159,37 @@ properati2021 <- mutate(properati2021, cat2metro2=as.numeric(catmetro2))
 ```
 
 
+```{r}
+properati2021 <- mutate(properati2021, superficiecat=ifelse(superficie %in% 32:55, "Chico",
+                                                     ifelse(superficie %in% 56:75, "Mediano",
+                                                     ifelse(superficie %in% 76:150, "Grande", "Muy grande"))))
+```
+
+```{r}
+ggplot(data = properati2021) +
+    geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)
+```
+A partir de este boxplot, podemos ver que en dentro de la categoría de departamentos de pequeña superficie, identificamos valores outlyers en el precio de su metro2 (tomaremos como valores outlyers los precios del metro2 mayores a $50.000).Por lo tanto, eliminaremos dichos casos para evitar que sesguen las medidas de tendencia central
+
+```{r}
+properati2021 <- filter(properati2021, metro2<50000)
+```
+
+```{r}
+summary(properati2021$metro2)
+```
+```{r}
+ggplot(data = properati2021) +
+    geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)
+```
+A través de este boxplot se puede observar que continúa habiendo valores outlyers pero su magnitud es menor, por lo tanto, no serán eliminados. 
+
+```{r}
+properati2021 <- mutate(properati2021, cat2metro2 = recode(cat2metro2, "1"="Muy bajo", "2"="Bajo", "3"="Medio", "4"="Alto", "5"="Muy alto"))
+```
+
+
+
+
+
 
