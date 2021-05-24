@@ -191,6 +191,45 @@ properati2021 <- mutate(properati2021, cat2metro2 = recode(cat2metro2, "1"="Muy 
 Procederemos a componer mapas que nos permitan visualizar la ubicación de las unidades de la base de datos de Properati, a fin de poder identificar las zonas más significativas para continuar para nuestro análisis.
 
 
+```{r}
+mapaCABA <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/barrios/barrios.geojson")
+```
+
+
+```{r}
+cantidadpromxbarrio <- properati2021 %>% 
+  group_by(l3) %>% 
+  summarise(promedio=mean(metro2)) 
+```
+
+
+```{r}
+properatisinNA <- filter(properati2021, !(lon=="NA" & lat=="NA"))
+```
+
+
+```{r}
+properatisinNA <- st_as_sf(properatisinNA,coords=c("lon","lat"),crs=4326)
+```
+
+```{r}
+properatisinNA <- st_transform(properatisinNA,crs = st_crs(mapaCABA))
+```
+
+
+```{r}
+properatisinNA <- mutate(properatisinNA, cat2metro2=factor(cat2metro2, levels = c ("Muy bajo", "Bajo", "Medio", "Alto", "Muy alto")))
+```
+
+
+
+```{r fig.height=15, fig.width=15}
+ggplot(data=mapaCABA)+
+  geom_sf(data=mapaCABA) +
+  geom_sf(data=filter (properatisinNA, l3 != ""), aes(color=cat2metro2), size=3)+
+  scale_color_viridis_d() +
+  theme_minimal()
+```
 
 
 
