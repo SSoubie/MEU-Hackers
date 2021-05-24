@@ -188,7 +188,7 @@ A través de este boxplot se puede observar que continúa habiendo valores outly
 properati2021 <- mutate(properati2021, cat2metro2 = recode(cat2metro2, "1"="Muy bajo", "2"="Bajo", "3"="Medio", "4"="Alto", "5"="Muy alto"))
 ```
 
-Procederemos a componer mapas que nos permitan visualizar la ubicación de las unidades de la base de datos de Properati, a fin de poder identificar las zonas más significativas para continuar con nuestro análisis.
+Procederemos a componer mapas que nos permitan visualizar la ubicación de las unidades de la base de datos de Properati, a fin de poder identificar las zonas más significativas para continuar para nuestro análisis.
 
 
 
