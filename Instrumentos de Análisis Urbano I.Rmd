@@ -261,6 +261,12 @@ subte <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Dat
 metrobus <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estaciones-de-metrobus.geojson")
 ```
 
+*Sacamos las paradas que se encuentran fuera de la CABA*
+
+```{r}
+metrobus <- filter(metrobus, METROBUS!="Metrobus Norte - Av Maipú (provincia)")
+```
+
 ```{r}
 csac <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/salud/centros-salud-accion-comunitaria-cesac/centros_de_salud_nivel_1_BADATA_WGS84.geojson")
 ```
