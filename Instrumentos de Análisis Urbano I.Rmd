@@ -268,20 +268,21 @@ metrobus <- filter(metrobus, METROBUS!="Metrobus Norte - Av Maipú (provincia)")
 ```
 
 ```{r}
-csac <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/salud/centros-salud-accion-comunitaria-cesac/centros_de_salud_nivel_1_BADATA_WGS84.geojson")
+csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/centros_de_salud_nivel_1_BADATA_WGS84.geojson")
 ```
 
 ```{r}
-cmb <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/centros-medicos-barriales/centros-medicos-barriales.geojson")
+cmb <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/centros-medicos-barriales.geojson")
 ```
 
 ```{r}
-ess <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/vicejefatura-de-gobierno/estaciones-saludables/estaciones-saludables.geojson")
+ess <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estaciones-saludables.geojson")
 ```
 
 ```{r}
-mapaCABA <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/barrios/barrios.geojson") 
+mapaCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
 ```
+
 
 
 *creamos un dataset con todas las infraestructuras de salud públicas de la Ciudad*
