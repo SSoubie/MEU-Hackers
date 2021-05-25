@@ -231,5 +231,105 @@ ggplot(data=mapaCABA)+
   theme_minimal()
 ```
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+**DISTANCIAS**
+
+*DATASETS*
+
+```{r}
+manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
+```
+
+```{r}
+hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
+```
+
+```{r}
+radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/radioscensales.geojson")
+```
+
+```{r}
+calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
+```
+
+```{r}
+subte <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estacionsubte.geojson")
+```
+
+```{r}
+metrobus <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estaciones-de-metrobus.geojson")
+```
+
+```{r}
+csac <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/salud/centros-salud-accion-comunitaria-cesac/centros_de_salud_nivel_1_BADATA_WGS84.geojson")
+```
+
+```{r}
+cmb <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/centros-medicos-barriales/centros-medicos-barriales.geojson")
+```
+
+```{r}
+ess <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/vicejefatura-de-gobierno/estaciones-saludables/estaciones-saludables.geojson")
+```
+
+```{r}
+mapaCABA <- read_sf("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/barrios/barrios.geojson") 
+```
+
+
+*creamos un dataset con todas las infraestructuras de salud públicas de la Ciudad*
+
+```{r}
+hospitales <- mutate(hospitales, tipo="hospital")
+csac <- mutate(csac, tipo="csac")
+cmb <- mutate(cmb, tipo="barrial")
+ess <- mutate(ess, tipo="estacion")
+```
+
+*Pusimos un sistema de corrdenadas en dos planos*
+
+```{r}
+hospitales <- st_transform(hospitales, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
+csac <- st_transform(csac, crs=st_crs(hospitales))
+metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
+subte <- st_transform(subte, crs = st_crs(hospitales))
+```
+
+*Elegimos la cobertura que creemos conveniente para una atección de urgencia de un hospital*
+
+```{r}
+coberturaHospitales <- hospitales %>% 
+    st_buffer(dist = 1000) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+coberturacsac <- csac %>% 
+    st_buffer(dist = 500) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+coberturmetrobus <- metrobus %>% 
+    st_buffer(dist = 500) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+coberturasubte <- subte %>% 
+    st_buffer(dist = 500) %>%
+    summarise(cobertura=TRUE)
+```
+
+
+```{r}
+ggplot()+
+  geom_sf(data=mapaCABA)+
+  geom_sf(data=coberturaHospitales, fill="red")+
+  geom_sf(data=coberturacsac, fill="green")+
+  geom_sf(data=coberturasubte, fill="yellow")+
+  geom_sf(data=coberturmetrobus, fill="orange")+
+  theme_void()
+```
 
