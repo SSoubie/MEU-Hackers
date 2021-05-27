@@ -233,21 +233,24 @@ ggplot(data=mapaCABA)+
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
 **DISTANCIAS**
 
 *DATASETS*
 
 ```{r}
-manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
-```
-
-```{r}
-hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
+mapaCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
 ```
 
 ```{r}
 radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/radioscensales.geojson")
 ```
+
+```{r}
+manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
+```
+
+*Sumamos la planta del transporte*
 
 ```{r}
 calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
@@ -260,30 +263,44 @@ subte <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Dat
 ```{r}
 metrobus <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estaciones-de-metrobus.geojson")
 ```
-
 *Sacamos las paradas que se encuentran fuera de la CABA*
 
 ```{r}
 metrobus <- filter(metrobus, METROBUS!="Metrobus Norte - Av Maipú (provincia)")
 ```
 
+*Sumamos las infraestructuras de salud*
+
 ```{r}
-csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/centros_de_salud_nivel_1_BADATA_WGS84.geojson")
+hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
 ```
 
 ```{r}
-cmb <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/centros-medicos-barriales.geojson")
+csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/csac.geojson")
 ```
 
 ```{r}
-ess <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estaciones-saludables.geojson")
+cmb <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/cmb.geojson")
 ```
 
 ```{r}
-mapaCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
+ess <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estacionsaludable.geojson")
 ```
 
+*Por último, sumamos el dataset de alojamientos*
 
+```{r}
+hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/alojamientos.geojson")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = filter(calles, tipo_c=="AVENIDA"))+
+  geom_sf(data = metrobus, color="yellow")+
+  geom_sf(data=csac, color="red")+
+  geom_sf(data=cmb, color="red")+
+  geom_sf(data=ess, color="red")
+```
 
 *creamos un dataset con todas las infraestructuras de salud públicas de la Ciudad*
 
@@ -301,6 +318,8 @@ hospitales <- st_transform(hospitales, crs="+proj=tmerc +lat_0=-34.6297166 +lon_
 csac <- st_transform(csac, crs=st_crs(hospitales))
 metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
 subte <- st_transform(subte, crs = st_crs(hospitales))
+hoteles <- st_transform(hoteles, crs=st_crs(hospitales))
+mapaCABA <- st_transform(mapaCABA, crs = st_crs(hospitales))
 ```
 
 *Elegimos la cobertura que creemos conveniente para una atección de urgencia de un hospital*
@@ -329,14 +348,29 @@ coberturasubte <- subte %>%
     summarise(cobertura=TRUE)
 ```
 
-
 ```{r}
 ggplot()+
-  geom_sf(data=mapaCABA)+
+  geom_sf(data=mapaCABA, fill="NA")+
   geom_sf(data=coberturaHospitales, fill="red")+
   geom_sf(data=coberturacsac, fill="green")+
   geom_sf(data=coberturasubte, fill="yellow")+
   geom_sf(data=coberturmetrobus, fill="orange")+
+  geom_sf(data=hoteles, fill="black")+
   theme_void()
 ```
 
+*Calculamos la densidad de población*
+
+```{r}
+radiosCensales <- radiosCensales %>% 
+  mutate(AREA_KM2=round(AREA_KM2, 2), 
+        densidadPob=round(POBLACION/AREA_KM2, 2)) %>% 
+  st_transform(radiosCensales,crs=st_crs(hospitales))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = radiosCensales, aes(fill=densidadPob))+
+  scale_fill_viridis_c()+
+  theme_void()
+```
