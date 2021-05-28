@@ -320,6 +320,7 @@ metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
 subte <- st_transform(subte, crs = st_crs(hospitales))
 hoteles <- st_transform(hoteles, crs=st_crs(hospitales))
 mapaCABA <- st_transform(mapaCABA, crs = st_crs(hospitales))
+manzanas <- st_transform(manzanas, crs = st_crs(hospitales))
 ```
 
 *Elegimos la cobertura que creemos conveniente para una atección de urgencia de un hospital*
@@ -348,6 +349,8 @@ coberturasubte <- subte %>%
     summarise(cobertura=TRUE)
 ```
 
+*Agregar degrades*
+
 ```{r}
 ggplot()+
   geom_sf(data=mapaCABA, fill="NA")+
@@ -373,4 +376,64 @@ ggplot() +
   geom_sf(data = radiosCensales, aes(fill=densidadPob))+
   scale_fill_viridis_c()+
   theme_void()
+```
+
+*Hacemos un dataset solo con las avenidas*
+
+```{r}
+avenidas <- filter(calles, tipo_c=="AVENIDA")
+```
+
+*Centroides de manzanas*
+
+```{r}
+manzanacentroide <- st_centroid(manzanas)
+```
+```{r}
+ggplot()+ geom_sf(data = manzanas, fill="NA") +
+  geom_sf(data = manzanacentroide, color="blue", size=0.001)+
+  theme_void()
+```
+
+```{r}
+avenidas <- st_transform(avenida, crs = st_crs(hospitales))
+```
+
+*Calculamos la distancias de los centroides de manzana a los distintos puntos de transporte*
+
+```{r}
+distanciavenida <- st_distance(manzanacentroide, avenidas)
+
+distanciasubte <- st_distance(manzanacentroide, subte)
+
+distanciametrobus <- st_distance(manzanacentroide, metrobus)
+```
+
+*Nos quedamos con la distancia miníma de cada manzana con una avenida*
+
+```{r}
+avenidacercana <- apply(distanciavenida,1,function(x) min(x))
+```
+
+*Hacemos lo mismo para las estaciones de subte y las paradas del metrobus*
+
+```{r}
+subtecercano <- apply(distanciasubte,1, function(x) min(x))
+metrobuscercano <- apply(distanciametrobus,1, function(x) min(x))
+```
+
+*Redondeamos los valores*
+
+```{r}
+avenidacercana <- round(avenidacercana, 0)
+subtecercano <- round(subtecercano, 0)
+metrobuscercano <- round(metrobuscercano, 0)
+```
+
+*Agregamos las distancias al dataset de manzanas*
+
+```{r}
+manzanas <- mutate(manzanas, distanciaavenida=avenidacercana,
+                   distanciasubte=subtecercano,
+                   distanciametrobus=metrobuscercano)
 ```
