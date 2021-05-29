@@ -311,7 +311,7 @@ cmb <- mutate(cmb, tipo="barrial")
 ess <- mutate(ess, tipo="estacion")
 ```
 
-*Pusimos un sistema de corrdenadas en dos planos*
+*Pusimos un sistema de coordenadas en dos planos*
 
 ```{r}
 hospitales <- st_transform(hospitales, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
