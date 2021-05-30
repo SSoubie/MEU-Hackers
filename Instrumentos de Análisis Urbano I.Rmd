@@ -461,6 +461,28 @@ summary(manzanacentroide$densidadPob)
 ```
 
 ```{r}
+manzanacentroide <- manzanacentroide %>% 
+                      as.data.frame() %>%
+                      select(SM,densidadPob,cobhospitales, cobcesac, cobsubte, cobmetrobus)
+manzanas <-  left_join(manzanas,manzanacentroide,by="SM")
+```
+
+```{r}
+quiebres <- c(0,0.2,0.4,0.6,0.8,1)
+```
+
+```{r}
+manzanas <- manzanas %>%
+            mutate(cat_densidad=cut(densidadPob,breaks = quantile(densidadPob,quiebres,na.rm = TRUE ),include.lowest = TRUE),
+                   cat_distanciasubte=cut(-distanciasubte,breaks = quantile(-distanciasubte,quiebres,na.rm = TRUE ),include.lowest = TRUE),
+                   cat_distanciametrobus=cut(-distanciametrobus,breaks = quantile(-distanciametrobus,quiebres,na.rm = TRUE ),include.lowest = TRUE))
+```
+
+```{r}
+manzanas <- mutate(manzanas, cat_distanciavenida=cut(-distanciavenida,breaks = quantile(-distanciavenida,quiebres,na.rm = TRUE ),include.lowest = TRUE))
+```
+
+```{r}
 prueba <- filter(manzanacentroide, cobhospitales==TRUE & cobmetrobus==TRUE & cobsubte==TRUE & cobcesac==TRUE & densidadPob>=16760)
 ```
 
