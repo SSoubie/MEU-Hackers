@@ -63,9 +63,7 @@ radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers
 
 ```{r}
 hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
-                       
-manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
-
+                      
 ```
 
 ```{r}
@@ -118,17 +116,8 @@ properati2021 <- filter(properati2021, !(surface_covered=="NA" & surface_total==
 ```
 
 ```{r}
-summary(properati2021$surface_covered)
-```
-```{r}
-summary(properati2021$surface_total)
-```
-
-```{r}
 properati2021 <- mutate(properati2021, superficie=ifelse(is.na(surface_total), surface_covered, surface_total))
 ```
-
-
 
 ```{r}
 properati2021 <- mutate(properati2021, metro2=precio/superficie, round(metro2,0))
