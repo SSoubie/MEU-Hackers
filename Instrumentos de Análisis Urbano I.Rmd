@@ -311,7 +311,7 @@ cmb <- mutate(cmb, tipo="barrial")
 ess <- mutate(ess, tipo="estacion")
 ```
 
-*Pusimos un sistema de coordenadas en dos planos*
+*Pusimos un sistema de corrdenadas en dos planos*
 
 ```{r}
 hospitales <- st_transform(hospitales, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
@@ -359,22 +359,6 @@ ggplot()+
   geom_sf(data=coberturasubte, fill="yellow")+
   geom_sf(data=coberturmetrobus, fill="orange")+
   geom_sf(data=hoteles, fill="black")+
-  theme_void()
-```
-
-*Calculamos la densidad de población*
-
-```{r}
-radiosCensales <- radiosCensales %>% 
-  mutate(AREA_KM2=round(AREA_KM2, 2), 
-        densidadPob=round(POBLACION/AREA_KM2, 2)) %>% 
-  st_transform(radiosCensales,crs=st_crs(hospitales))
-```
-
-```{r}
-ggplot() +
-  geom_sf(data = radiosCensales, aes(fill=densidadPob))+
-  scale_fill_viridis_c()+
   theme_void()
 ```
 
@@ -463,18 +447,6 @@ manzanacentroide <- rename(manzanacentroide, "cobhospitales"=cobertura.x...14,
                            "cobcesac"=cobertura.y...17)
 ```
 
-```{r}
-prueba <- filter(manzanacentroide, cobhospitales==TRUE & cobmetrobus==TRUE & cobsubte==TRUE & cobertura==TRUE & densidadPob>=16760)
-```
-
-
-```{r}
-ggplot()+geom_sf(data=manzanas)+
-        geom_sf(data=prueba, color="red", size=0.01)+
-  geom_sf(data=hoteles, color="green")+
-        theme_void()
-```
-
 *Calculamos la densidad de población*
 
 ```{r}
@@ -499,4 +471,13 @@ manzanacentroide <- st_join(manzanacentroide,radiosCensales)
 summary(manzanacentroide$densidadPob)
 ```
 
+```{r}
+prueba <- filter(manzanacentroide, cobhospitales==TRUE & cobmetrobus==TRUE & cobsubte==TRUE & cobcesac==TRUE & densidadPob>=16760)
+```
 
+```{r}
+ggplot()+geom_sf(data=manzanas)+
+        geom_sf(data=prueba, color="red", size=0.01)+
+  geom_sf(data=hoteles, color="green")+
+        theme_void()
+```
