@@ -222,7 +222,6 @@ ggplot(data=mapaCABA)+
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
 **DISTANCIAS**
 
 *DATASETS*
@@ -309,7 +308,7 @@ metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
 subte <- st_transform(subte, crs = st_crs(hospitales))
 hoteles <- st_transform(hoteles, crs=st_crs(hospitales))
 mapaCABA <- st_transform(mapaCABA, crs = st_crs(hospitales))
-manzanas <- st_transform(manzanas, crs = st_crs(hospitales))
+manzanas <- st_transform(manzanas, crs = st_crs (hospitales))
 ```
 
 *Elegimos la cobertura que creemos conveniente para una atección de urgencia de un hospital*
@@ -322,7 +321,7 @@ coberturaHospitales <- hospitales %>%
 
 ```{r}
 coberturacsac <- csac %>% 
-    st_buffer(dist = 1500) %>%
+    st_buffer(dist = 500) %>%
     summarise(cobertura=TRUE)
 ```
 
@@ -338,8 +337,6 @@ coberturasubte <- subte %>%
     summarise(cobertura=TRUE)
 ```
 
-*Agregar degrades*
-
 ```{r}
 ggplot()+
   geom_sf(data=mapaCABA, fill="NA")+
@@ -351,10 +348,28 @@ ggplot()+
   theme_void()
 ```
 
-*Hacemos un dataset solo con las avenidas*
+*Calculamos la densidad de población*
 
 ```{r}
-avenidas <- filter(calles, tipo_c=="AVENIDA")
+radiosCensales <- radiosCensales %>% 
+  mutate(AREA_KM2=round(AREA_KM2, 2), 
+        densidadPob=round(POBLACION/AREA_KM2, 2)) %>% 
+  st_transform(radiosCensales,crs=st_crs(hospitales))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = radiosCensales, aes(fill=densidadPob))+
+  scale_fill_viridis_c()+
+  theme_void()
+```
+
+```{r}
+summary(calles)
+```
+
+```{r}
+avenidas <- calles %>% filter(tipo_c == "AVENIDA")
 ```
 
 *Centroides de manzanas*
@@ -362,6 +377,7 @@ avenidas <- filter(calles, tipo_c=="AVENIDA")
 ```{r}
 manzanacentroide <- st_centroid(manzanas)
 ```
+
 ```{r}
 ggplot()+ geom_sf(data = manzanas, fill="NA") +
   geom_sf(data = manzanacentroide, color="blue", size=0.001)+
@@ -376,9 +392,7 @@ avenidas <- st_transform(avenidas, crs = st_crs(hospitales))
 
 ```{r}
 distanciavenida <- st_distance(manzanacentroide, avenidas)
-
 distanciasubte <- st_distance(manzanacentroide, subte)
-
 distanciametrobus <- st_distance(manzanacentroide, metrobus)
 ```
 
@@ -478,8 +492,16 @@ manzanas <- manzanas %>%
                    cat_distanciametrobus=cut(-distanciametrobus,breaks = quantile(-distanciametrobus,quiebres,na.rm = TRUE ),include.lowest = TRUE))
 ```
 
+
 ```{r}
-manzanas <- mutate(manzanas, cat_distanciavenida=cut(-distanciavenida,breaks = quantile(-distanciavenida,quiebres,na.rm = TRUE ),include.lowest = TRUE))
+manzanas<- mutate (manzanas,cobhospitales=ifelse(is.na(cobhospitales),"FALSE","TRUE"),
+                    cobcesac=ifelse(is.na(cobcesac),"FALSE","TRUE"))
+```
+
+
+
+```{r}
+manzanas <- mutate(manzanas, cat_distanciavenida=cut(-avenidacercana,breaks = quantile(-avenidacercana,quiebres,na.rm = TRUE ),include.lowest = TRUE))
 ```
 
 ```{r}
@@ -491,4 +513,93 @@ ggplot()+geom_sf(data=manzanas)+
         geom_sf(data=prueba, color="red", size=0.01)+
   geom_sf(data=hoteles, color="green")+
         theme_void()
+```
+
+
+```{r}
+dim(distanciavenida)
+```
+
+Ahora vamos a hacer el índice, pero tenemos que sumar, cuando podamos resolver, las siguientes variables: properati y avenidas cercana. 
+
+```{r}
+manzanas <- manzanas %>% 
+   mutate(cat_densidad=as.numeric(cat_densidad),
+                   cat_distanciasubte=as.numeric(cat_distanciasubte),
+                   cat_distanciametrobus=as.numeric(cat_distanciametrobus))
+                   ##cat_distanciavenida=as.numeric(!cat_distanciavenida))
+```
+
+
+```{r}
+manzanas <- mutate(manzanas,cat_cobhospitales=ifelse(cobhospitales=="TRUE",1,0))
+```
+
+```{r}
+manzanas <- mutate(manzanas,cat_cobcesac=ifelse(cobcesac=="TRUE",1,0))
+```
+
+```{r}
+manzanas <- manzanas %>%
+            mutate(IG=cat_densidad*0.2+cat_distanciasubte*0.15+cat_distanciametrobus*0.15+cat_cobhospitales*0.35+cat_cobcesac*0.15,
+                   IG=ifelse(IG>quantile(IG,probs = 0.9,na.rm = TRUE),TRUE,FALSE))
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data=mapaCABA) +
+  geom_sf(data=manzanas %>% filter(!is.na(IG)) ,aes(fill=IG), color=NA) +
+  geom_sf(data=hoteles, color="green", size=1)+
+  scale_fill_manual(values = c(NA,"#f03b20")) +
+  guides(fill=FALSE) +
+  theme_minimal() +
+  coord_sf(datum=NA) +
+  labs(title="Índice General",
+       subtitle="Ciudad de Buenos Aires")
+```
+
+Este mapa nos muestra en color rojo las manzanas en las cuales sería correcto colocar los hoteles considerando las siguientes variables: densidad poblacional, distancia subte, distancia metrobus, cobertura hospital y cobertura Csac. 
+
+Ahora bien, en verde, se muestran los alojamientos. Para poder apreciar de forma más clara cuáles serían los alojamientos que se encuentran en dichas manzanas, haremos lo siguiente: 
+
+
+```{r}
+coberturahotel <- hoteles %>% 
+    st_buffer(dist = 100) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data=mapaCABA) +
+  geom_sf(data=manzanas %>% filter(!is.na(IG)) ,aes(fill=IG), color=NA) +
+  geom_sf(data=coberturahotel, color="green", size=1)+
+  scale_fill_manual(values = c(NA,"#f03b20")) +
+  guides(fill=FALSE) +
+  theme_minimal() +
+  coord_sf(datum=NA) +
+  labs(title="Índice General",
+       subtitle="Ciudad de Buenos Aires")
+```
+
+```{r}
+manzanas2 <- st_join(manzanas, coberturahotel)
+```
+
+
+```{r}
+manzanas3 <- filter(manzanas2, IG=="TRUE" & cobertura=="TRUE")
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data=mapaCABA) +
+  geom_sf(data=manzanas3, fill="blue") +
+  guides(fill=FALSE) +
+  theme_minimal() +
+  coord_sf(datum=NA) +
+  labs(title="Índice General",
+       subtitle="Ciudad de Buenos Aires")
 ```
