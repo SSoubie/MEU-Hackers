@@ -220,6 +220,38 @@ ggplot(data=mapaCABA)+
   theme_minimal()
 ```
 
+
+```{r}
+st_crs(properatisinNA)
+```
+```{r}
+st_crs(mapaCABA)
+```
+
+```{r}
+properatisinNA <- st_transform(properatisinNA, crs = st_crs (mapaCABA))
+```
+
+
+```{r}
+properatiprueba <- st_join(mapaCABA,properatisinNA)
+```
+
+```{r}
+properatibarrioprueba <-properatiprueba %>% 
+  group_by(barrio) %>% 
+  summarise(promediometro2=mean(metro2))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data= mapaCABA)+
+  geom_sf (data=properatibarrioprueba, aes(fill=promediometro2)) +
+  scale_fill_viridis_c() +
+  theme_minimal()
+```
+
+
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 **DISTANCIAS**
