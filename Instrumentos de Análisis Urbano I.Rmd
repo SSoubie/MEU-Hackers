@@ -603,3 +603,71 @@ ggplot() +
   labs(title="Índice General",
        subtitle="Ciudad de Buenos Aires")
 ```
+
+
+
+
+
+```{r}
+library(hereR)
+set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
+```
+
+
+```{r}
+manzanacentroide3 <- st_centroid(manzanas3)
+```
+
+```{r}
+detectar <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/operativo-detectar.geojson")
+```
+
+```{r}
+st_crs(manzanacentroide3)
+```
+
+```{r}
+st_crs(detectar)
+```
+```{r}
+manzanacentroide3 <- st_transform(manzanacentroide3,crs = st_crs(detectar))
+```
+
+```{r}
+detectar <- mutate(detectar, direccionCABA=paste(direccion, "Ciudad de Buenos Aires, Argentina", sep=", "))
+```
+
+```{r}
+set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
+ubicaciones_detectar <- geocode(detectar %>% pull(direccionCABA))
+```
+
+
+```{r}
+ubicaciondetectar <- select(detectar, geometry)
+```
+
+
+```{r}
+ubicacioncentroidem3 <- select(manzanacentroide3, geometry)
+```
+
+```{r}
+hoteles <- st_transform(hoteles,crs = st_crs(detectar))
+```
+
+```{r}
+hoteles <- mutate(hoteles, direccionCABA=paste(direccion, "CIUDAD DE BUENOS AIRES, ARGENTINA", sep=", "))
+```
+
+```{r}
+set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
+ubicaciones_hoteles <- geocode(hoteles %>% pull(direccionCABA))
+```
+
+
+```{r}
+viaje <- route(origin = ubicaciones_detectar,
+               destination = ubicaciones_hoteles,
+               mode = "pedestrian",range=60*15)
+```
