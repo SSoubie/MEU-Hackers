@@ -1,0 +1,267 @@
+---
+title: "Properati"
+author: "Santiago Soubie"
+date: "2/6/2021"
+output: html_document
+---
+
+---
+title: "TP"
+author: "Santiago Soubie"
+date: "18/5/2021"
+output: html_document
+---
+
+# **TRABAJO PRÁCTICO FINAL**
+
+*INTEGRANTES*
+  - Florencia Kihara
+  - Victoria Marco
+  - Santiago Soubie
+
+**Consigna**
+
+*Debido a la pandemia del COVID-19, el Gobierno de la Ciudad de Buenos Aires tomó la decisión de reutilizar la capacidad hotelera preexistente para poder mejorar la capacidad de atención sanitaria para la población. Sin embargo, encontrar las ubicaciones óptimas no es una tarea trivial.*
+
+*Por un lado, el presupuesto con el que cuenta el GCBA es limitado. Por otro lado, la zona donde estén estos nuevos centros de atención de pacientes va a depender de distintos factores como la accesibilidad y la densidad poblacional.*
+
+*El objetivo de este trabajo es poder indicar las manzanas de la Ciudad de Buenos Aires de mayor viabilidad para el alquiler de algún inmueble en base a los siguientes criterios:*
+
+*● Costo promedio de alquiler*
+
+*● Métricas de accesibilidad (cercanía con avenidas, cercanía con una estación de subte y cualquier otra variable que les pueda parecer útil, tiempo de viaje, en minutos caminando o en auto, desde distintos puntos de la Ciudad)*
+
+*● Densidad poblacional*
+
+Antes de arrancar cargamos las librerías que vamos a utilizar a lo largo del proyecto.
+
+```{r}
+library(tidyverse)
+library(sf)
+library(leaflet)
+```
+
+Para este trabajo utilizaremos distitos datasets (espaciales y no). Estos comprenden:
+
+- *Aquellos datasets vinculados a la organización territorial de la Ciudad de Buenos Aires (CABA).*
+
+```{r}
+mapaCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
+```
+
+```{r}
+radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/radioscensales.geojson")
+```
+
+```{r}
+manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
+```
+
+- *Aquellos vinculados a la planta del transporte.*
+
+```{r}
+calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
+```
+
+```{r}
+subte <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/estacionsubte.geojson")
+```
+
+```{r}
+metrobus <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/metrobus.geojson")
+```
+
+Si observamos dentro del dataset "metrobus", veremos algunas paradas por fuera de la CABA. Vamos a quitarlas.
+
+```{r}
+metrobus <- filter(metrobus, METROBUS!="Metrobus Norte - Av Maipú (provincia)")
+```
+
+- *Aquellos ligados a las infraestructuras de salud de la CABA*
+
+```{r}
+hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
+```
+
+```{r}
+csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/csac.geojson")
+```
+
+- *Aquel que contiene los alojamientos de la CABA*
+
+```{r}
+hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/alojamientos.geojson")
+```
+
+## Emprolijar gráfico
+
+```{r}
+ggplot() + 
+  geom_sf(data=manzanas, fill="grey", color="NA")+
+  geom_sf(data=hoteles, color="red")+
+  geom_sf(data=hospitales, color="green3", size=2)+
+  geom_sf(data=subte, color="yellow", size=3)+
+  theme_void()
+```
+
+- *Aquel que posee el precio de las propiedades en alquiler*
+
+```{r}
+properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento de Analisis Urbano/TP/Datasets/properati.csv",
+                      stringsAsFactors = TRUE,
+                      encoding = "UTF-8")
+```
+
+Empezaremos por trabajar sobre este último dataset debido a que es necesario intervenir el mismo para poder obtener la información necesaria para nuestro proyecto.
+
+1º Extraemos el año de la columna "created_on" para poder filtrar los casos del año 2021.
+2º Seleccionamos aquellos casos donde existe información precisa para la CABA.
+3º Pesificamos los precios de los alquileres en dolares al valor de referencia de $150 a fin de homogeneizar una unidad de valor para todos los regitros. 
+4º Eliminamos las columnas que no serán de utilidad para nuestro trabajo. 
+
+```{r}
+properati2021 <- properati %>% 
+  separate(created_on, c("ano", "mes", "dia"), sep = "-") %>% 
+  filter(ano=="2021" & l2=="Capital Federal" & price!="NA" & currency!="") %>% 
+  mutate(precio=ifelse(currency=="USD", price*150, price*1)) %>% 
+  rename(barrios=l3) %>% 
+  select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6, -price, -currency)
+```
+
+## ME QUEDARÏA SOLO CON LOS DEPTOSSSS
+
+```{r}
+properati2021 <- filter(properati2021, property_type %in% c("Casa", "Departamento", "Local comercial", "Oficina"))
+```
+
+Ahora calcularemos el precio del metro cuadrado. Para ello:
+
+1º Quitaremos los casos que no cuenten con ninguna superficie medible (total y/o cubierta).
+2º Crearemos una columna que contenga la superficie total, o, en detrimento, la cubierta.
+3º Calcularemos el precio del m2.
+*4º Quitaremos los casos menores a 32 m2 y mayores a 10000m2.*
+
+```{r}
+properati2021 <- properati2021 %>% 
+  filter(!(surface_covered=="NA" & surface_total=="NA")) %>% 
+  mutate(superficie=ifelse(is.na(surface_total), surface_covered, surface_total),
+         metro2=precio/superficie,
+         metro2=round(metro2,0)) %>% 
+  filter(superficie>=32 & superficie<=10000)
+```
+
+Luego, queremos clasificar los alquileres en categorías según su valor. Entonces:
+
+1º Creamos el vector que va a establecer los quiebres
+
+```{r}
+quiebres <- c(0,0.2,0.4,0.6,0.8,1)
+```
+
+2º Clasificamos los valores de acuerdo en categorías 
+
+```{r}
+properati2021 <- mutate(properati2021, catmetro2=cut(metro2,breaks = quantile(metro2,quiebres,na.rm = TRUE, dig.lab = 5),include.lowest = TRUE))
+```
+
+3º Modificamos las etiquetas para que sea más simple comprenderlas
+
+```{r}
+properati2021 <- mutate(properati2021, catmetro2=as.numeric(catmetro2),
+                        catmetro2 = recode(catmetro2, "1"="Muy bajo", "2"="Bajo", "3"="Medio", "4"="Alto", "5"="Muy alto"))
+```
+
+Veamos que tenemos hasta el momento. Analicemos los valores del M2 de acuerdo a las dimensiones de los inmuebles. Para ello, primero clasifiquemos a los mismos en categorías de acuerdo a su tamaño. Luego, graficaremos.
+
+```{r}
+properati2021 <- mutate(properati2021, superficiecat=ifelse(superficie %in% 32:55, "Chico",
+                                                     ifelse(superficie %in% 56:75, "Mediano",
+                                                     ifelse(superficie %in% 76:150, "Grande", "Muy grande"))))
+```
+
+```{r}
+properati2021 <- mutate(properati2021, superficiecat=factor(superficiecat, levels = c ("Chico", "Mediano", "Grande", "Muy grande")))
+
+ggplot(data = properati2021) +
+    geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)
+```
+
+A partir de este boxplot, podemos ver que identificamos valores extremos que sesgan nuestra muestra. Por este motivo, nuestro siguiente paso será quitar todos aquellos casos en los que el valor del m2 supere los 50.000 pesos.
+
+```{r}
+properati2021 <- filter(properati2021, metro2<50000)
+```
+
+Graficamos nuevamente
+
+```{r}
+ggplot(data = properati2021) +
+    geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)
+```
+
+A través de este nuevo boxplot, podemos comprobar que continuan existiendo outliers, pero su magnitud no es tan extrema (comparativamente con los casos ya borrados), y, por lo tanto, no serán eliminados. 
+
+Por último, procederemos a componer un mapa que nos permita visualizar la ubicación de las unidades de nuestro dataset, a fin de poder identificar las zonas más significativas para nuestro análisis. Con este fin:
+
+1º Quitaremos todos los valores que no puedan ser ubicados en el mapa.
+
+```{r}
+properati2021 <- filter(properati2021, !(lon=="NA" & lat=="NA"))
+```
+
+2º Transformaremos nuestro dataset en uno espacial.
+
+```{r}
+properati2021 <- st_as_sf(properati2021,
+                           coords = c("lon","lat"),
+                           crs = 4326)
+```
+
+*Graficamos para ver nuestro resultado hasta el momento*
+
+```{r}
+properati2021 <- mutate(properati2021, catmetro2=factor(catmetro2, levels = c ("Muy bajo", "Bajo", "Medio", "Alto", "Muy alto")))
+
+ggplot()+
+  geom_sf(data=mapaCABA) +
+  geom_sf(data=properati2021, aes(color=catmetro2), size=3)+
+  scale_color_viridis_d() +
+  theme_minimal()
+```
+
+Al graficar, notamos que hay un caso que se encuentra mal geolocalizado. Da la casualidad, que al buscarlo en el dataset, es el único valor que no posee barrio. Lo filtramos y volvemos a graficar.
+
+```{r fig.height=15, fig.width=15}
+properati2021 <- filter(properati2021, barrios != "")
+
+ggplot()+
+  geom_sf(data=mapaCABA) +
+  geom_sf(data=properati2021, aes(color=catmetro2), size=3)+
+  scale_color_viridis_d() +
+  theme_minimal()
+```
+
+3º Como podemos observar en nuestro dataset, la variable barrios contiene más que los que son oficialmente reconocidos por la CABA. Para poder asignarlos de forma precisa, unimos nuestro dataset con el dataset "mapaCABA".
+
+```{r}
+properati2021Corregido <- st_join(mapaCABA,properati2021)
+```
+
+4º Agrupamos los valores del M2 por barrio para sacar el valor promedio
+
+```{r}
+properati2021barrios <- properati2021Corregido %>% 
+  group_by(barrio) %>% 
+  summarise(promediometro2=mean(metro2)) %>% 
+  mutate(promediometro2=round(promediometro2, 2))
+```
+
+*Graficamos*
+
+```{r}
+ggplot() +
+  geom_sf(data= mapaCABA)+
+  geom_sf (data=properati2021barrios, aes(fill=promediometro2)) +
+  scale_fill_viridis_c() +
+  theme_void()
+```
