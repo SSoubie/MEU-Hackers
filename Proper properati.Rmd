@@ -5,13 +5,6 @@ date: "2/6/2021"
 output: html_document
 ---
 
----
-title: "TP"
-author: "Santiago Soubie"
-date: "18/5/2021"
-output: html_document
----
-
 # **TRABAJO PRÁCTICO FINAL**
 
 *INTEGRANTES*
@@ -112,6 +105,19 @@ properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento
                       encoding = "UTF-8")
 ```
 
+```{r}
+duplicadosbis <- duplicated(properati, incomparables = FALSE)
+```
+
+```{r}
+summary(duplicadosbis)
+```
+
+```{r}
+properati <- unique(properati)
+```
+
+
 Empezaremos por trabajar sobre este último dataset debido a que es necesario intervenir el mismo para poder obtener la información necesaria para nuestro proyecto.
 
 1º Extraemos el año de la columna "created_on" para poder filtrar los casos del año 2021.
@@ -128,18 +134,19 @@ properati2021 <- properati %>%
   select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6, -price, -currency)
 ```
 
-## ME QUEDARÏA SOLO CON LOS DEPTOSSSS
+## *JUSTIFICAR*
 
 ```{r}
-properati2021 <- filter(properati2021, property_type %in% c("Casa", "Departamento", "Local comercial", "Oficina"))
+properati2021 <- filter(properati2021, property_type %in% c("Departamento", "Oficina"))
 ```
+
 
 Ahora calcularemos el precio del metro cuadrado. Para ello:
 
 1º Quitaremos los casos que no cuenten con ninguna superficie medible (total y/o cubierta).
 2º Crearemos una columna que contenga la superficie total, o, en detrimento, la cubierta.
 3º Calcularemos el precio del m2.
-*4º Quitaremos los casos menores a 32 m2 y mayores a 10000m2.*
+*4º Quitaremos los casos menores a 32 m2 y mayores a 75000m2.* Por qé 32? nuevo código de edificación
 
 ```{r}
 properati2021 <- properati2021 %>% 
@@ -147,7 +154,7 @@ properati2021 <- properati2021 %>%
   mutate(superficie=ifelse(is.na(surface_total), surface_covered, surface_total),
          metro2=precio/superficie,
          metro2=round(metro2,0)) %>% 
-  filter(superficie>=32 & superficie<=10000)
+  filter(superficie>=32 & superficie<=7500)
 ```
 
 Luego, queremos clasificar los alquileres en categorías según su valor. Entonces:
@@ -229,6 +236,7 @@ ggplot()+
   theme_minimal()
 ```
 
+*VER*
 Al graficar, notamos que hay un caso que se encuentra mal geolocalizado. Da la casualidad, que al buscarlo en el dataset, es el único valor que no posee barrio. Lo filtramos y volvemos a graficar.
 
 ```{r fig.height=15, fig.width=15}
@@ -260,8 +268,234 @@ properati2021barrios <- properati2021Corregido %>%
 
 ```{r}
 ggplot() +
-  geom_sf(data= mapaCABA)+
+  geom_sf(data=mapaCABA)+
   geom_sf (data=properati2021barrios, aes(fill=promediometro2)) +
   scale_fill_viridis_c() +
   theme_void()
 ```
+
+Unimos nuestro dataset al de radio censales que contiene la información por barrio
+
+*OJO, HAY ALGUNOS QUE SE SUPERPONEN ENTRE BARRIOS*
+
+```{r}
+properatibarriosunion <- properati2021barrios %>% 
+  as.data.frame() %>% 
+  select(barrio, promediometro2) %>% 
+  rename(BARRIO=barrio)
+radiosCensales <- left_join(radiosCensales, properatibarriosunion, by="BARRIO")
+```
+
+-------------------------------------------------------------------------------
+
+Para la selección de las manzanas de nuestros interés, construiremos un indice que integre distintas variables.
+
+Puesto que trabajaremos con distintos datasets espaciales, homogeneizaremos los sistemas de coordenadas dos planos. Para ello, utilizaremos el sitema de coordenadas que utiliza el GCBA.
+
+```{r}
+hospitales <- st_transform(hospitales, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
+csac <- st_transform(csac, crs=st_crs(hospitales))
+metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
+subte <- st_transform(subte, crs = st_crs(hospitales))
+hoteles <- st_transform(hoteles, crs=st_crs(hospitales))
+mapaCABA <- st_transform(mapaCABA, crs = st_crs(hospitales))
+manzanas <- st_transform(manzanas, crs = st_crs(hospitales))
+calles <- st_transform(calles, crs = st_crs(hospitales))
+properati2021barrios <- st_transform(properati2021barrios, crs = st_crs(hospitales))
+radiosCensales <- st_transform(radiosCensales, crs = st_crs(hospitales))
+```
+
+Queremos que las manzanas que elijamos se encuentren, como mucho, a 1000 mts de un hospitals público y a 1500 mts de un Csac.
+
+```{r}
+coberturaHospitales <- hospitales %>% 
+    st_buffer(dist = 1000) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+coberturacsac <- csac %>% 
+    st_buffer(dist = 1500) %>%
+    summarise(cobertura=TRUE)
+```
+
+Este punto lo retomaremos más adelate. Por ahora, solo graficamos por el momento.
+
+```{r}
+ggplot()+
+  geom_sf(data=mapaCABA, fill="NA")+
+  geom_sf(data=coberturacsac, fill="green")+
+  geom_sf(data=coberturaHospitales, fill="red")+
+  geom_sf(data=hoteles, fill="black")+
+  theme_void()
+```
+
+Otra de las condiciones que debe cumplir nuestra manzana es que sea de fácil acceso. En este sentido, las mismas deben encontrarse a una distancia prudencial de las estaciones de subte, de metrobus y las avenidas. Con ello en mente:
+
+1º Como un extremo de una manzana puede estar más cerca de una ubicación que otro y, a su vez, dado que una manzana puede poseer una forma irrregular, calcularemos la distancia desde el centro. Por este motivo, nuestro primer paso será extraer los centros de manzanas.
+
+```{r}
+manzanacentroide <- st_centroid(manzanas)
+```
+
+2º Hacemos un dataset que solo contenga las avenidas de la CABA.
+
+```{r}
+avenidas <- filter(calles, tipo_c=="AVENIDA")
+```
+
+*Graficamos para ver los centroides de manzana*
+
+```{r fig.height=15, fig.width=15}
+ggplot()+ geom_sf(data = manzanas, fill = "NA") +
+  geom_sf(data = manzanacentroide, color = "blue", size = 0.001)+
+  geom_sf(data = avenidas, color = "red")+
+  geom_sf(data = subte, color = "seagreen4", size = 5)+
+  geom_sf(data = metrobus, color = "orange", size = 3)+
+  theme_void()
+```
+
+3º Calculamos la distancias de los centroides de manzana a los distintos puntos de transporte
+
+```{r}
+distanciavenida <- st_distance(manzanacentroide, avenidas)
+
+distanciasubte <- st_distance(manzanacentroide, subte)
+
+distanciametrobus <- st_distance(manzanacentroide, metrobus)
+```
+
+4º Como el paso anterior nos devolvió todas las distacias posibles de nuestra manzana a todos los puntos de transporte, solo nos vamos a quedar con las de menor tamaño.
+
+```{r}
+avenidacercana <- apply(distanciavenida,1,function(x) min(x))
+```
+
+```{r}
+subtecercano <- apply(distanciasubte,1, function(x) min(x))
+metrobuscercano <- apply(distanciametrobus,1, function(x) min(x))
+```
+
+*Redondeamos los valores*
+
+```{r}
+avenidacercana <- round(avenidacercana, 0)
+subtecercano <- round(subtecercano, 0)
+metrobuscercano <- round(metrobuscercano, 0)
+```
+
+5º Agregamos las distancias al dataset de manzanas
+
+```{r}
+manzanas <- mutate(manzanas, distanciaavenida=avenidacercana,
+                   distanciasubte=subtecercano,
+                   distanciametrobus=metrobuscercano)
+```
+
+Graficamos
+
+```{r}
+ggplot()+
+  geom_sf(data=manzanas, fill="NA")+
+  geom_sf(data=filter(manzanas, distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200), fill="red")+
+  theme_void()
+```
+
+Retomemos la cuestión de la cobertura de los hospitales y Cesacs. Nosotros solo nos interesa quedarnos con aquellas manzanas que se encuentren a menos de 1000 mts de los hospitales, y a 1500 mts de los Cesacs. Para averguar cuales son:
+
+1º Unimos el dataset de centroides de manzana con los de cobertura de hospitales y Cesacs. 
+
+```{r}
+manzanacentroide <- st_join(manzanacentroide, coberturaHospitales)
+manzanacentroide <- st_join(manzanacentroide, coberturacsac)
+```
+
+*Renombramos las columnas*
+
+```{r}
+manzanacentroide <- rename(manzanacentroide, "cobhospitales"=cobertura.x,
+                           "cobcesac"=cobertura.y)
+```
+
+Graficamos
+
+```{r}
+ggplot()+
+  geom_sf(data = manzanas, fill="NA")+
+  geom_sf(data = filter(manzanacentroide, cobhospitales=="TRUE" & cobcesac=="TRUE"), color="red")+
+  theme_void()
+```
+
+Otro factor que tendremos en cuenta es el de densidad poblacional. Nuestro objetivo es seleccionar aquellas manzanas que cumplan con un determinado parámetro de densidad. Para calcular la misma: 
+
+1º Creamos una columna que contenga la población por km2 de cada radio censal.
+
+```{r}
+radiosCensales <- mutate(radiosCensales, densidadPob=round(POBLACION/AREA_KM2, 2))
+```
+
+Graficamos
+
+```{r}
+ggplot() +
+  geom_sf(data = radiosCensales, aes(fill=densidadPob))+
+  scale_fill_viridis_c()+
+  theme_void()
+```
+
+2º Unimos el dataset de los radios censales al de manzanas centroides.
+
+*Por qué no directamente al de manzanas?*
+
+```{r}
+manzanacentroide <- st_join(manzanacentroide,radiosCensales)
+```
+
+Una vez finalizados estos pasos, seleccionamos las columnas de interés del dataset manzanascentroide y las volcamos a nuestro dataset de manzanas.
+
+```{r}
+manzanacentroide <- manzanacentroide %>% 
+                      as.data.frame() %>%
+                      select(SM, cobhospitales, cobcesac, promediometro2, densidadPob)
+manzanas <- left_join(manzanas, manzanacentroide, by="SM")
+```
+
+*Al unir nuestros datasets, vemos que se suman más casos de los que debería haber (12588 frente a 12520).*
+
+```{r}
+duplicados <- duplicated(manzanas, incomparables = FALSE)
+```
+
+```{r}
+summary(duplicados)
+```
+
+*Nos quedamos solo con los valores únicos*
+
+```{r}
+manzanas <- unique(manzanas)
+```
+
+```{r}
+summary(manzanas$promediometro2)
+```
+
+```{r}
+prueba <- filter(manzanas, cobhospitales==TRUE & cobcesac==TRUE & densidadPob>=16576 & distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200 & promediometro2<=642)
+```
+
+```{r fig.height=15, fig.width=15}
+ggplot()+geom_sf(data=manzanas, fill="NA")+
+        geom_sf(data=prueba, fill="red")+
+        geom_sf(data=hoteles, color="blue")+
+        theme_void()
+```
+
+```{r}
+ggplot() +
+  geom_sf(data=manzanas)+
+  geom_sf(data = filter(manzanas, is.na(promediometro2)), fill="red")+
+  theme_void()
+```
+
+*Justificacion*
