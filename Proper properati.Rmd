@@ -26,7 +26,7 @@ output: html_document
 
 *● Densidad poblacional*
 
-Antes de arrancar cargamos las librerías que vamos a utilizar a lo largo del proyecto.
+Antes de arrancar con nuestro trabajo, cargamos las librerías que vamos a utilizar a lo largo del proyecto.
 
 ```{r}
 library(tidyverse)
@@ -34,12 +34,12 @@ library(sf)
 library(leaflet)
 ```
 
-Para este trabajo utilizaremos distitos datasets (espaciales y no). Estos comprenden:
+Nuestro trabajo consiste en identificar los hoteles con la mejor ubicación para mejorar la capacidad de atención sanitaria de la Ciudad de Buenos Aires (CABA). En consecuencia, utilizaremos distitos datasets (espaciales y no). Estos comprenden:
 
-- *Aquellos datasets vinculados a la organización territorial de la Ciudad de Buenos Aires (CABA).*
+- Aquellos datasets vinculados a la organización territorial de la CABA
 
 ```{r}
-mapaCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
+barriosCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
 ```
 
 ```{r}
@@ -50,7 +50,7 @@ radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers
 manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
 ```
 
-- *Aquellos vinculados a la planta del transporte.*
+- Aquellos vinculados a la planta del transporte
 
 ```{r}
 calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
@@ -64,13 +64,13 @@ subte <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Dat
 metrobus <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/metrobus.geojson")
 ```
 
-Si observamos dentro del dataset "metrobus", veremos algunas paradas por fuera de la CABA. Vamos a quitarlas.
+*Si observamos dentro del dataset "metrobus", veremos algunas paradas por fuera de la CABA. Vamos a quitarlas*
 
 ```{r}
 metrobus <- filter(metrobus, METROBUS!="Metrobus Norte - Av Maipú (provincia)")
 ```
 
-- *Aquellos ligados a las infraestructuras de salud de la CABA*
+- Aquellos ligados a infraestructuras de salud
 
 ```{r}
 hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
@@ -80,13 +80,13 @@ hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/mai
 csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/csac.geojson")
 ```
 
-- *Aquel que contiene los alojamientos de la CABA*
+- Aquel que contiene los alojamientos de la CABA
 
 ```{r}
 hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/alojamientos.geojson")
 ```
 
-## Emprolijar gráfico
+*Graficamos*
 
 ```{r}
 ggplot() + 
@@ -97,7 +97,7 @@ ggplot() +
   theme_void()
 ```
 
-- *Aquel que posee el precio de las propiedades en alquiler*
+- Aquel que posee el precio de las propiedades en alquiler
 
 ```{r}
 properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento de Analisis Urbano/TP/Datasets/properati.csv",
@@ -105,24 +105,17 @@ properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento
                       encoding = "UTF-8")
 ```
 
-```{r}
-duplicadosbis <- duplicated(properati, incomparables = FALSE)
-```
-
-```{r}
-summary(duplicadosbis)
-```
+*Al ser tantos registros, para asegurarnos de que la base de datos solo contenga valores únicos, aplicaremos la función unique*
 
 ```{r}
 properati <- unique(properati)
 ```
 
-
 Empezaremos por trabajar sobre este último dataset debido a que es necesario intervenir el mismo para poder obtener la información necesaria para nuestro proyecto.
 
 1º Extraemos el año de la columna "created_on" para poder filtrar los casos del año 2021.
 2º Seleccionamos aquellos casos donde existe información precisa para la CABA.
-3º Pesificamos los precios de los alquileres en dolares al valor de referencia de $150 a fin de homogeneizar una unidad de valor para todos los regitros. 
+3º Pesificamos los precios de los alquileres en dolares al valor de referencia de $150 a fin de homogeneizar la unidad de valor para todos los regitros. 
 4º Eliminamos las columnas que no serán de utilidad para nuestro trabajo. 
 
 ```{r}
@@ -134,19 +127,18 @@ properati2021 <- properati %>%
   select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6, -price, -currency)
 ```
 
-## *JUSTIFICAR*
+## Optamos por quedarnos unicamente con los registros correspondientes a Departamentos y Oficinas porque....JUSTIFICAR
 
 ```{r}
 properati2021 <- filter(properati2021, property_type %in% c("Departamento", "Oficina"))
 ```
 
-
-Ahora calcularemos el precio del metro cuadrado. Para ello:
+Ahora calcularemos el precio del metro cuadrado (m2). Para ello:
 
 1º Quitaremos los casos que no cuenten con ninguna superficie medible (total y/o cubierta).
 2º Crearemos una columna que contenga la superficie total, o, en detrimento, la cubierta.
 3º Calcularemos el precio del m2.
-*4º Quitaremos los casos menores a 32 m2 y mayores a 75000m2.* Por qé 32? nuevo código de edificación
+*4º Quitaremos los casos menores a 32 m2 y mayores a 75000m2.* Por qé 32? nuevo código de edificación JUSTIFICACIÓN
 
 ```{r}
 properati2021 <- properati2021 %>% 
@@ -165,20 +157,20 @@ Luego, queremos clasificar los alquileres en categorías según su valor. Entonc
 quiebres <- c(0,0.2,0.4,0.6,0.8,1)
 ```
 
-2º Clasificamos los valores de acuerdo en categorías 
+2º Clasificamos los valores de acuerdo a categorías 
 
 ```{r}
 properati2021 <- mutate(properati2021, catmetro2=cut(metro2,breaks = quantile(metro2,quiebres,na.rm = TRUE, dig.lab = 5),include.lowest = TRUE))
 ```
 
-3º Modificamos las etiquetas para que sea más simple comprenderlas
+*Modificamos las etiquetas para que sea más simple comprenderlas*
 
 ```{r}
 properati2021 <- mutate(properati2021, catmetro2=as.numeric(catmetro2),
                         catmetro2 = recode(catmetro2, "1"="Muy bajo", "2"="Bajo", "3"="Medio", "4"="Alto", "5"="Muy alto"))
 ```
 
-Veamos que tenemos hasta el momento. Analicemos los valores del M2 de acuerdo a las dimensiones de los inmuebles. Para ello, primero clasifiquemos a los mismos en categorías de acuerdo a su tamaño. Luego, graficaremos.
+Veamos que tenemos hasta el momento. Analicemos los valores del m2 de acuerdo a las dimensiones de los inmuebles. Para ello, primero clasifiquemos a los mismos en categorías de acuerdo a su tamaño. Luego, graficaremos.
 
 ```{r}
 properati2021 <- mutate(properati2021, superficiecat=ifelse(superficie %in% 32:55, "Chico",
@@ -199,7 +191,7 @@ A partir de este boxplot, podemos ver que identificamos valores extremos que ses
 properati2021 <- filter(properati2021, metro2<50000)
 ```
 
-Graficamos nuevamente
+*Graficamos nuevamente*
 
 ```{r}
 ggplot(data = properati2021) +
@@ -230,35 +222,31 @@ properati2021 <- st_as_sf(properati2021,
 properati2021 <- mutate(properati2021, catmetro2=factor(catmetro2, levels = c ("Muy bajo", "Bajo", "Medio", "Alto", "Muy alto")))
 
 ggplot()+
-  geom_sf(data=mapaCABA) +
+  geom_sf(data=barriosCABA) +
   geom_sf(data=properati2021, aes(color=catmetro2), size=3)+
   scale_color_viridis_d() +
   theme_minimal()
 ```
 
-*VER*
-Al graficar, notamos que hay un caso que se encuentra mal geolocalizado. Da la casualidad, que al buscarlo en el dataset, es el único valor que no posee barrio. Lo filtramos y volvemos a graficar.
-
-```{r fig.height=15, fig.width=15}
-properati2021 <- filter(properati2021, barrios != "")
-
-ggplot()+
-  geom_sf(data=mapaCABA) +
-  geom_sf(data=properati2021, aes(color=catmetro2), size=3)+
-  scale_color_viridis_d() +
-  theme_minimal()
-```
-
-3º Como podemos observar en nuestro dataset, la variable barrios contiene más que los que son oficialmente reconocidos por la CABA. Para poder asignarlos de forma precisa, unimos nuestro dataset con el dataset "mapaCABA".
+3º Como podemos observar en nuestro dataset, la variable barrios contiene más que los que son oficialmente reconocidos. Para poder asignarlos de forma precisa, unimos nuestro dataset con el dataset "barriosCABA".
 
 ```{r}
-properati2021Corregido <- st_join(mapaCABA,properati2021)
+properati2021<- st_join(barriosCABA,properati2021)
 ```
-
-4º Agrupamos los valores del M2 por barrio para sacar el valor promedio
+*Gracias a este último paso, podemos ver que nos valores extremos de Versalles, en realidad, se encuentran mal geolocalizados. Vamos a quitarlos*
 
 ```{r}
-properati2021barrios <- properati2021Corregido %>% 
+filter(properati2021, barrio=="VERSALLES") 
+```
+
+```{r}
+properati2021 <- filter(properati2021, !(barrio=="VERSALLES" & barrios=="Catalinas"))
+```
+
+4º Agrupamos los registros y calculamos la media del m2 por barrio.
+
+```{r}
+properati2021barrios <- properati2021 %>% 
   group_by(barrio) %>% 
   summarise(promediometro2=mean(metro2)) %>% 
   mutate(promediometro2=round(promediometro2, 2))
@@ -268,7 +256,7 @@ properati2021barrios <- properati2021Corregido %>%
 
 ```{r}
 ggplot() +
-  geom_sf(data=mapaCABA)+
+  geom_sf(data=barriosCABA)+
   geom_sf (data=properati2021barrios, aes(fill=promediometro2)) +
   scale_fill_viridis_c() +
   theme_void()
@@ -276,21 +264,19 @@ ggplot() +
 
 Unimos nuestro dataset al de radio censales que contiene la información por barrio
 
-*OJO, HAY ALGUNOS QUE SE SUPERPONEN ENTRE BARRIOS*
-
 ```{r}
-properatibarriosunion <- properati2021barrios %>% 
+properati2021barrios <- properati2021barrios %>% 
   as.data.frame() %>% 
   select(barrio, promediometro2) %>% 
   rename(BARRIO=barrio)
-radiosCensales <- left_join(radiosCensales, properatibarriosunion, by="BARRIO")
+radiosCensales <- left_join(radiosCensales, properati2021barrios, by="BARRIO")
 ```
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-Para la selección de las manzanas de nuestros interés, construiremos un indice que integre distintas variables.
+Previo a seleccionar los hoteles con la mejor ubicación para mejorar la capacidad de atención sanitaria de la CABA, es necesario identificar las manzanas de la ciudad que cumplen con ciertos requisitos.
 
-Puesto que trabajaremos con distintos datasets espaciales, homogeneizaremos los sistemas de coordenadas dos planos. Para ello, utilizaremos el sitema de coordenadas que utiliza el GCBA.
+Puesto que trabajaremos con distintos datasets espaciales, homogeneizaremos los sistemas de coordenadas. Como referencia, utilizaremos el sitema de coordenadas que emplea el GCBA.
 
 ```{r}
 hospitales <- st_transform(hospitales, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
@@ -298,14 +284,13 @@ csac <- st_transform(csac, crs=st_crs(hospitales))
 metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
 subte <- st_transform(subte, crs = st_crs(hospitales))
 hoteles <- st_transform(hoteles, crs=st_crs(hospitales))
-mapaCABA <- st_transform(mapaCABA, crs = st_crs(hospitales))
+mapaCABA <- st_transform(barriosCABA, crs = st_crs(hospitales))
 manzanas <- st_transform(manzanas, crs = st_crs(hospitales))
 calles <- st_transform(calles, crs = st_crs(hospitales))
-properati2021barrios <- st_transform(properati2021barrios, crs = st_crs(hospitales))
 radiosCensales <- st_transform(radiosCensales, crs = st_crs(hospitales))
 ```
 
-Queremos que las manzanas que elijamos se encuentren, como mucho, a 1000 mts de un hospitals público y a 1500 mts de un Csac.
+Queremos que las manzanas que elijamos se encuentren, como mucho, a 1000 mts de un hospitales públicos y a 1500 mts de un Csac.
 
 ```{r}
 coberturaHospitales <- hospitales %>% 
@@ -323,10 +308,10 @@ Este punto lo retomaremos más adelate. Por ahora, solo graficamos por el moment
 
 ```{r}
 ggplot()+
-  geom_sf(data=mapaCABA, fill="NA")+
+  geom_sf(data=barriosCABA, fill="NA")+
   geom_sf(data=coberturacsac, fill="green")+
   geom_sf(data=coberturaHospitales, fill="red")+
-  geom_sf(data=hoteles, fill="black")+
+  geom_sf(data=hoteles, color="black")+
   theme_void()
 ```
 
@@ -338,7 +323,7 @@ Otra de las condiciones que debe cumplir nuestra manzana es que sea de fácil ac
 manzanacentroide <- st_centroid(manzanas)
 ```
 
-2º Hacemos un dataset que solo contenga las avenidas de la CABA.
+2º Hacemos un dataset que solo contenga las avenidas de CABA.
 
 ```{r}
 avenidas <- filter(calles, tipo_c=="AVENIDA")
@@ -355,7 +340,7 @@ ggplot()+ geom_sf(data = manzanas, fill = "NA") +
   theme_void()
 ```
 
-3º Calculamos la distancias de los centroides de manzana a los distintos puntos de transporte
+3º Calculamos la distancia desde los centroides de manzana a los distintos puntos de transporte
 
 ```{r}
 distanciavenida <- st_distance(manzanacentroide, avenidas)
@@ -392,7 +377,9 @@ manzanas <- mutate(manzanas, distanciaavenida=avenidacercana,
                    distanciametrobus=metrobuscercano)
 ```
 
-Graficamos
+*Graficamos*
+
+*PONER POR QUE ELEGIMOS ESAS DISTANCIAS
 
 ```{r}
 ggplot()+
@@ -417,7 +404,7 @@ manzanacentroide <- rename(manzanacentroide, "cobhospitales"=cobertura.x,
                            "cobcesac"=cobertura.y)
 ```
 
-Graficamos
+*Graficamos*
 
 ```{r}
 ggplot()+
@@ -434,7 +421,7 @@ Otro factor que tendremos en cuenta es el de densidad poblacional. Nuestro objet
 radiosCensales <- mutate(radiosCensales, densidadPob=round(POBLACION/AREA_KM2, 2))
 ```
 
-Graficamos
+*Graficamos*
 
 ```{r}
 ggplot() +
@@ -444,8 +431,6 @@ ggplot() +
 ```
 
 2º Unimos el dataset de los radios censales al de manzanas centroides.
-
-*Por qué no directamente al de manzanas?*
 
 ```{r}
 manzanacentroide <- st_join(manzanacentroide,radiosCensales)
@@ -460,7 +445,7 @@ manzanacentroide <- manzanacentroide %>%
 manzanas <- left_join(manzanas, manzanacentroide, by="SM")
 ```
 
-*Al unir nuestros datasets, vemos que se suman más casos de los que debería haber (12588 frente a 12520).*
+*Al unir nuestros datasets, vemos que se suman más casos de los que debería haber (12588 frente a 12520). Averiguamos si se generaron duplicados*
 
 ```{r}
 duplicados <- duplicated(manzanas, incomparables = FALSE)
@@ -470,32 +455,33 @@ duplicados <- duplicated(manzanas, incomparables = FALSE)
 summary(duplicados)
 ```
 
-*Nos quedamos solo con los valores únicos*
+*Efectivamente, algunos registros fueron duplicados. Por ello, procederemos  a quedarnos solo con los valores únicos*
 
 ```{r}
 manzanas <- unique(manzanas)
 ```
 
-```{r}
-summary(manzanas$promediometro2)
-```
+Ahora, Creamos un dataset que cuente con las manzanas que cumplen con las condiciones que pensamos
 
 ```{r}
-prueba <- filter(manzanas, cobhospitales==TRUE & cobcesac==TRUE & densidadPob>=16576 & distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200 & promediometro2<=642)
+manzanaselecta <- filter(manzanas, cobhospitales==TRUE & cobcesac==TRUE & densidadPob>=16576 & distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200 & promediometro2<=642)
 ```
 
 ```{r fig.height=15, fig.width=15}
 ggplot()+geom_sf(data=manzanas, fill="NA")+
-        geom_sf(data=prueba, fill="red")+
+        geom_sf(data=manzanaselecta, fill="red")+
         geom_sf(data=hoteles, color="blue")+
         theme_void()
 ```
+
+## ACÄ HABRÏA QUE PONER: 1º UNA CONCLUSIÖN y 2º UNA JUSTIFICACIÖN DEL PORQUË DECIDIMOS AVANZAR CON UN ÍNDICE
 
 ```{r}
 ggplot() +
   geom_sf(data=manzanas)+
   geom_sf(data = filter(manzanas, is.na(promediometro2)), fill="red")+
   theme_void()
-```
 
-*Justificacion*
+#Este gráfico los vamos a dejar o lo vamos a volar? Yo lo volaría
+
+```
