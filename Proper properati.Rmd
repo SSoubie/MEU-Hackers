@@ -34,6 +34,8 @@ library(sf)
 library(leaflet)
 ```
 
+## **PRIMERA PARTE: PREPARANDO NUESTROS DATASETS**
+
 Nuestro trabajo consiste en identificar los hoteles con la mejor ubicación para mejorar la capacidad de atención sanitaria de la Ciudad de Buenos Aires (CABA). En consecuencia, utilizaremos distitos datasets (espaciales y no). Estos comprenden:
 
 - Aquellos datasets vinculados a la organización territorial de la CABA
@@ -86,7 +88,7 @@ csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Data
 hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/alojamientos.geojson")
 ```
 
-*Graficamos*
+*Graficamos* *JUSTIFICAR = Completar gráfico*
 
 ```{r}
 ggplot() + 
@@ -127,7 +129,7 @@ properati2021 <- properati %>%
   select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6, -price, -currency)
 ```
 
-## Optamos por quedarnos unicamente con los registros correspondientes a Departamentos y Oficinas porque....JUSTIFICAR
+## Optamos por quedarnos unicamente con los registros correspondientes a Departamentos y Oficinas porque....*JUSTIFICAR*
 
 ```{r}
 properati2021 <- filter(properati2021, property_type %in% c("Departamento", "Oficina"))
@@ -138,7 +140,7 @@ Ahora calcularemos el precio del metro cuadrado (m2). Para ello:
 1º Quitaremos los casos que no cuenten con ninguna superficie medible (total y/o cubierta).
 2º Crearemos una columna que contenga la superficie total, o, en detrimento, la cubierta.
 3º Calcularemos el precio del m2.
-*4º Quitaremos los casos menores a 32 m2 y mayores a 75000m2.* Por qé 32? nuevo código de edificación JUSTIFICACIÓN
+*4º Quitaremos los casos menores a 32 m2 y mayores a 75000m2.* Por qé 32? nuevo código de edificación *JUSTIFICAR*
 
 ```{r}
 properati2021 <- properati2021 %>% 
@@ -178,14 +180,17 @@ properati2021 <- mutate(properati2021, superficiecat=ifelse(superficie %in% 32:5
                                                      ifelse(superficie %in% 76:150, "Grande", "Muy grande"))))
 ```
 
+*JUSTIFICACION* *VER ESCALAS* *VALOR M2 o VALOR ALQUILER (M2)*
+
 ```{r fig.height=5, fig.width=10}
 properati2021 <- mutate(properati2021, superficiecat=factor(superficiecat, levels = c ("Chico", "Mediano", "Grande", "Muy grande")))
+
 ggplot(data = properati2021) +
     geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)+
-   labs(title =" Boxplot de  categorías de Unidades funcionales de la Ciudad Autónoma de Buenos Aires", 
-       caption = "Properati",
-       x= "Categoría por superficie",
-       y= "Superfiecie (m2)")
+   labs(title ="Oficinas y departamentos en alquiler de la Ciudad Autónoma de Buenos Aires", 
+       caption = "Fuente: Properati",
+       x= "Tamaño",
+       y= "Valor (m2)")
 ```
 
 A partir de este boxplot, podemos ver que identificamos valores extremos que sesgan nuestra muestra. Por este motivo, nuestro siguiente paso será quitar todos aquellos casos en los que el valor del m2 supere los 50.000 pesos.
@@ -199,10 +204,10 @@ properati2021 <- filter(properati2021, metro2<50000)
 ```{r fig.height=5, fig.width=10}
 ggplot(data = properati2021) +
     geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)+
-  labs(title =" Boxplot de  categorías de Unidades funcionales de la Ciudad Autónoma de Buenos Aires (filtrado)", 
-       caption = "Properati",
-       x= "Categoría por superficie",
-       y= "Superfiecie (m2)")
+   labs(title ="Oficinas y departamentos en alquiler de la Ciudad Autónoma de Buenos Aires", 
+       caption = "Fuente: Properati",
+       x= "Tamaño",
+       y= "Valor (m2)")
 ```
 
 A través de este nuevo boxplot, podemos comprobar que continuan existiendo outliers, pero su magnitud no es tan extrema (comparativamente con los casos ya borrados), y, por lo tanto, no serán eliminados. 
@@ -223,18 +228,20 @@ properati2021 <- st_as_sf(properati2021,
                            crs = 4326)
 ```
 
-
 *Graficamos para ver nuestro resultado hasta el momento*
 
-```{r fig.height=10, fig.width=10 }
+*JUSTIFICACION* *VER ESCALAS* *VALOR M2 o VALOR ALQUILER (M2)*
+
+```{r}
 properati2021 <- mutate(properati2021, catmetro2=factor(catmetro2, levels = c ("Muy bajo", "Bajo", "Medio", "Alto", "Muy alto")))
+
 ggplot()+
   geom_sf(data=barriosCABA) +
-  geom_sf(data=properati2021, aes(fill=catmetro2))+
-  scale_fill_viridis_d()+
-  labs(title =" Tamaño promedio de las Unidades en alquiler por Barrio en la Ciudad Autónoma de Buenos Aires", 
+  geom_sf(data=properati2021, aes(color=catmetro2))+
+  scale_color_viridis_d()+
+  labs(title ="Oficinas y departamentos en alquiler", 
        caption = "Fuente: Properati",
-      fill="Categorías de tamaño")+
+       fill="Valor (m2)")+
   theme_void()
 ```
 
@@ -243,6 +250,7 @@ ggplot()+
 ```{r}
 properati2021<- st_join(barriosCABA,properati2021)
 ```
+
 *Gracias a este último paso, podemos ver que nos valores extremos de Versalles, en realidad, se encuentran mal geolocalizados. Vamos a quitarlos*
 
 ```{r}
@@ -264,18 +272,19 @@ properati2021barrios <- properati2021 %>%
 
 *Graficamos*
 
-```{r fig.height=10, fig.width=10}
+```{r}
 ggplot() +
   geom_sf(data=barriosCABA)+
   geom_sf (data=properati2021barrios, aes(fill=promediometro2)) +
-  labs(title =" Superficie promedio de las Unidades en alquiler por Barrio de la Ciudad Autónoma de Buenos Aires", 
+  labs(title ="Alquiler promedio", 
+       subtitle = "Por barrio",
        caption = "Fuente: Properati",
-       fill="Superficie promedio en m2")+
+       fill="Valor (m2)")+
   scale_fill_viridis_c() +
   theme_void()
 ```
 
-Unimos nuestro dataset al de radio censales que contiene la información por barrio
+Por último, unimos nuestro dataset al de radios censales que contiene la información por barrio
 
 ```{r}
 properati2021barrios <- properati2021barrios %>% 
@@ -285,8 +294,7 @@ properati2021barrios <- properati2021barrios %>%
 radiosCensales <- left_join(radiosCensales, properati2021barrios, by="BARRIO")
 ```
 
-
-
+## **SEGUNDA PARTE: SELECCIONANDO LA MANZANA IDEAL**
 
 Previo a seleccionar los hoteles con la mejor ubicación para mejorar la capacidad de atención sanitaria de la CABA, es necesario identificar las manzanas de la ciudad que cumplen con ciertos requisitos.
 
@@ -298,7 +306,7 @@ csac <- st_transform(csac, crs=st_crs(hospitales))
 metrobus <- st_transform(metrobus, crs = st_crs(hospitales))
 subte <- st_transform(subte, crs = st_crs(hospitales))
 hoteles <- st_transform(hoteles, crs=st_crs(hospitales))
-mapaCABA <- st_transform(barriosCABA, crs = st_crs(hospitales))
+barriosCABA <- st_transform(barriosCABA, crs = st_crs(hospitales))
 manzanas <- st_transform(manzanas, crs = st_crs(hospitales))
 calles <- st_transform(calles, crs = st_crs(hospitales))
 radiosCensales <- st_transform(radiosCensales, crs = st_crs(hospitales))
@@ -320,22 +328,23 @@ coberturacsac <- csac %>%
 
 Este punto lo retomaremos más adelate. Por ahora, solo graficamos por el momento.
 
+*JUSTIFICACIÓN* *LEYENDA*
+
 ```{r fig.height=10, fig.width=10}
 ggplot()+
   geom_sf(data=barriosCABA, fill="NA")+
   geom_sf(data=coberturacsac, fill="lightgoldenrod1", alpha=0.5)+
   geom_sf(data=coberturaHospitales, fill="lightblue2", alpha=0.5)+
   geom_sf(data=hoteles, color="hotpink4", size=1.5)+
-   labs(title =" Gráfico de cobertura de Csacs, Hospitales y hoteles en la Ciudad Autónoma de Buenos Aires", 
-       caption = "Fuente=BA DATA")+
+   labs(title = "Cobertura de centros de salud",
+       caption = "Fuente: BA DATA",
+       color = "Hoteles")+
   theme_void()
 ```
 
-Otra de las condiciones que debe cumplir nuestra manzana es que sea de fácil acceso. 
-En este sentido, las mismas deben encontrarse a una distancia prudencial de las estaciones de subte, de metrobus y las avenidas. Con ello en mente:
+Otra de las condiciones que debe cumplir nuestra manzana es que sea de fácil acceso. En este sentido, las mismas deben encontrarse a una distancia prudencial de las estaciones de subte, de metrobus y las avenidas. Con ello en mente:
 
-1º Como un extremo de una manzana puede estar más cerca de una ubicación que otro y, a su vez, dado que una manzana puede poseer una forma irrregular, calcularemos la distancia desde el centro. 
-Por este motivo, nuestro primer paso será extraer los centros de manzanas.
+1º Como un extremo de una manzana puede estar más cerca de una ubicación que otro y, a su vez, dado que una manzana puede poseer una forma irrregular, calcularemos la distancia desde el centro. Por este motivo, nuestro primer paso será extraer los centros de manzanas.
 
 ```{r}
 manzanacentroide <- st_centroid(manzanas)
@@ -349,13 +358,15 @@ avenidas <- filter(calles, tipo_c=="AVENIDA")
 
 *Graficamos para ver los centroides de manzana*
 
+*JUSTIFICACIÓN* *LEYENDA*
+
 ```{r fig.height=10, fig.width=10}
 ggplot()+ geom_sf(data = manzanas, fill = "NA") +
-  geom_sf(data = manzanacentroide, color = "lightblue2", size = 0.001)+
+  geom_sf(data = manzanacentroide, color = "lightblue3", size = 0.1)+
   geom_sf(data = avenidas, color = "hotpink4", size=1)+
   geom_sf(data = subte, color = "olivedrab4", size = 5)+
   geom_sf(data = metrobus, color = "salmon", size = 3)+
-  labs(title = "Ubicación de los centros de manzanas (centroides),Avenidas, paradas de Metrobus, estaciones de subte de la Ciudad Autónoma de Buenos Aires ", 
+  labs(title = "Centros de manzana", 
        caption = "Fuente: BA DATA")+
   theme_void()
 ```
@@ -364,7 +375,9 @@ ggplot()+ geom_sf(data = manzanas, fill = "NA") +
 
 ```{r}
 distanciavenida <- st_distance(manzanacentroide, avenidas)
+
 distanciasubte <- st_distance(manzanacentroide, subte)
+
 distanciametrobus <- st_distance(manzanacentroide, metrobus)
 ```
 
@@ -397,21 +410,23 @@ manzanas <- mutate(manzanas, distanciaavenida=avenidacercana,
 
 *Graficamos*
 
-Hemos decidido considerar las distancias a avenidas a red de metrobus y a red de subte, para garantizar accesibilidad en diversos medios de transportes
+Hemos decidido considerar las distancias a avenidas, a la red de metrobus y a la red de subte para garantizarla  accesibilidad en diversos medios de transportes
+
+*JUSTIFICACIÓN* *LEYENDA*
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
   geom_sf(data=manzanas, fill="NA")+
   geom_sf(data=filter(manzanas, distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200), fill="salmon")+
-  labs(title = "Ubicación de las manzanas según distancias consideradas en la Ciudad Autónoma de Buenos Aires ", 
-       subtitle= "Consideradas según distancia a avenidas, estaciones de Subte y paradas de metrobus",
+  labs(title = "Manzanas ideales", 
+       subtitle= "Según cercanía a avenidas y las redes de metrobus y subte",
        caption = "Fuente: BA DATA")+
   theme_void()
 ```
 
-Retomaremos la cobertura de los hospitales y Cesacs. 
-A nosotros sólo nos interesa quedarnos con aquellas manzanas que se encuentren a menos de 1000 mts de los hospitales, y a 1500 mts de los Cesacs. 
-Para averguar cuales son:
+Retomemos la cuestión de la cobertura de los hospitales y Cesacs.
+
+Nosotros solo nos interesa quedarnos con aquellas manzanas que se encuentren a menos de 1000 mts de los hospitales, y a 1500 mts de los Cesacs. Para averguar cuales son:
 
 1º Unimos el dataset de centroides de manzana con los de cobertura de hospitales y Cesacs. 
 
@@ -433,16 +448,15 @@ manzanacentroide <- rename(manzanacentroide, "cobhospitales"=cobertura.x,
 ggplot()+
   geom_sf(data = manzanas, fill="NA")+
   geom_sf(data = filter(manzanacentroide, cobhospitales=="TRUE" & cobcesac=="TRUE"), color="lightblue2")+
-  labs(title = "Ubicación de las manzanas según distancias consideradas en la Ciudad Autónoma de Buenos Aires ", 
-       subtitle= "Consideradas según distancia a avenidas, estación de Subte, parada de metrobus, cobertura de hospitales y Cesacs",
+  labs(title = "Manzanas ideales", 
+       subtitle= "Según cobertura de centros de salud",
        caption = "Fuente: BA DATA")+
   theme_void()
 ```
 
-Otro factor que tendremos en cuenta es el de la densidad poblacional. 
-Nuestro objetivo es seleccionar aquellas manzanas que cumplan con un determinado parámetro de densidad.
+Otro factor que tendremos en cuenta es el de densidad poblacional.
 
-Para calcular la misma: 
+Nuestro objetivo es seleccionar aquellas manzanas que cumplan con un determinado parámetro de densidad. Para calcular la misma: 
 
 1º Creamos una columna que contenga la población por km2 de cada radio censal.
 
@@ -455,8 +469,9 @@ radiosCensales <- mutate(radiosCensales, densidadPob=round(POBLACION/AREA_KM2, 2
 ```{r fig.height=10, fig.width=10}
 ggplot() +
   geom_sf(data = radiosCensales, aes(fill=densidadPob))+
-  labs(title = "Densidad poblacional por manzana en la Ciudad Autónoma de Buenos Aires ", 
-       fill= "densidad poblacional",
+  labs(title = "Densidad poblacional en la Ciudad Autónoma de Buenos Aires ",
+       subtitle = "Por manzana",
+       fill= "habitantes por km2",
        caption="Fuente: BA DATA")+
   scale_fill_viridis_c()+
   theme_void()
@@ -487,50 +502,55 @@ duplicados <- duplicated(manzanas, incomparables = FALSE)
 summary(duplicados)
 ```
 
-*Efectivamente, algunos registros fueron duplicados. Por ello, procederemos a quedarnos solo con los valores únicos*
+*Efectivamente, algunos registros fueron duplicados. Por ello, procederemos  a quedarnos solo con los valores únicos*
 
 ```{r}
 manzanas <- unique(manzanas)
 ```
 
-Ahora, Creamos un dataset que cuente con las manzanas que cumplen con las siguientes condiciones, que llamaremos Condiciones 01: 
+Ahora, creamos un dataset que cuente con las manzanas que cumplen con las siguientes condiciones:
 
-- que haya cobertura de hospitales
+- que posea cobertura de hospitales
 
-- que haya cobertura Cesac
+- que posea cobertura Cesacs
 
-- que la densidad sea mayor o igual que la media (media= 16576)
+- que posea una densidad poblacional mayor o igual que la media por manzana de la CABA (media= 16576)
 
-- que se encuentre a menos o igual de 500m de una parada de metrobus
+- que se encuentre a 500 mts o menos de una parada de metrobús
 
-- que se encuentre a menos o igual de 500m de estación de subte
+- que se encuentre a 500 mts o menos de una estación de subte
 
-- que se encuentre a menos o igual de 200m de una avenida
+- que se encuentre a 200 mts o menos de una avenida
 
-- que la manzana esté dentro de un barrio cuyo promedio de precio del metro2 de las unidades en alquiler sea menor o igual a $642 (media= 642)
+- que la manzana esté dentro de un barrio donde el valor del m2 de las unidades en alquiler sea menor o igual a la media de la ciudad (media= 642)
 
 ```{r}
 manzanaselecta <- filter(manzanas, cobhospitales==TRUE & cobcesac==TRUE & densidadPob>=16576 & distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200 & promediometro2<=642)
 ```
 
-Ahora graficaremos las manzanas que cumplen con condición 01 y los hoteles de la Ciudad.
+Ahora graficaremos las manzanas que cumplen con estas condiciones y la ubicación de los hoteles de la Ciudad.
+
+*JUSTIFICACIN* *LEYENDA*
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+geom_sf(data=manzanas, fill="NA", color="grey60")+
         geom_sf(data=manzanaselecta, fill="turquoise3")+
         geom_sf(data=hoteles, color="hotpink4", alpha=0.75)+
-   labs(title = "Manzanas que cumplen con condiciones 01 en la Ciudad Autónoma de Buenos Aires ",
-       fill= "Referencias",
-       caption="Fuente: BA DATA y Properati")+
+   labs(title = "Manzanas ideales para la ubicación de un centros de recepción",
+        subtitle = "Según criterios establecidos",
+        caption="Fuente: BA DATA & Properati")+
         theme_void()
 ```
-A primera vista, analizando el mapa, se puede observar que las manzanas que cumplen con la Condición 01 son escasas.Esto va en detrimento de la escala que se quiere alcanzar para alivianar el sistema de salud. 
 
-Entendiendo que las variables que componen la Condición 01 pueden tener diferente ponderación según su importancia, es que decidimos hacer un índice para poder priorizar dichas variables.
+Al analizar el mapa, se puede observar que las manzanas que cumplen con las condiciones estipuladas son escasas. Esto va en detrimento de la escala que se quiere alcanzar para alivianar el sistema de salud. 
+
+## **TERCERA PARTE: CONSTRUYENDO UN ÍNDICE**
+
+Entendiendo que los parámetros que seleccionamos en este trabajo pueden ser valorados de distinta manera, hemos decidido construir un índice que pondere dichas variables.
  
-Antes de realizar el índice debemos realizar algunas operaciones sobre las variables previamente mencionadas.
+Antes de avanzar en dicha dirección, debemos realizar algunas operaciones sobre las variables previamente mencionadas.
 
-Considerando los quiebres indicados con anterioridad, dividiremos las variables en quintiles
+1º Considerando los quiebres indicados con anterioridad, dividiremos las variables en quintiles para normalizar los valores
 
 ```{r}
 manzanas <- manzanas %>% 
@@ -538,37 +558,25 @@ manzanas <- manzanas %>%
                    cat_distanciasubte=cut(-distanciasubte,breaks = quantile(-distanciasubte,quiebres,na.rm = TRUE ),include.lowest = TRUE),
                    cat_distanciametrobus=cut(-distanciametrobus,breaks = quantile(-distanciametrobus,quiebres,na.rm = TRUE ),include.lowest = TRUE),
                    cat_promediom2=cut(-promediometro2,breaks = quantile(-promediometro2,quiebres,na.rm = TRUE ),include.lowest = TRUE),
-                   cat_distanciavenida=cut(-distanciavenida,breaks = quantile(-distanciavenida,quiebres,na.rm = TRUE ),include.lowest = TRUE))
+                   cat_distanciavenida=cut(-distanciaavenida,breaks = quantile(-distanciaavenida,quiebres,na.rm = TRUE ),include.lowest = TRUE))
 ```
-
 
 ```{r}
-manzanas<- mutate (manzanas,cobhospitales=ifelse(is.na(cobhospitales),"FALSE","TRUE"))
-                           
+manzanas<- mutate (manzanas, cobhospitales=ifelse(is.na(cobhospitales),"FALSE","TRUE"),
+                   cobcesac=ifelse(is.na(cobcesac),"FALSE","TRUE"))
 ```
 
-
-```{r}
-manzanas <- mutate(manzanas, cat_distanciavenida=cut(-avenidacercana,breaks = quantile(-distanciavenida,quiebres,na.rm = TRUE ),include.lowest = TRUE))
-```
-
+2º Luego, a cada categoría le asignaremos un valor numérico.
 
 ```{r}
 manzanas <- manzanas %>% 
    mutate(cat_densidad=as.numeric(cat_densidad),
-                   cat_distanciasubte=as.numeric(cat_distanciasubte),
-                   cat_distanciametrobus=as.numeric(cat_distanciametrobus),
-                   cat_distanciavenida=as.numeric(!cat_distanciavenida),
-                   cat_promediom2=as.numeric(cat_promediom2))
-```
-
-
-```{r}
-manzanas <- mutate(manzanas,cat_cobhospitales=ifelse(cobhospitales=="TRUE",1,0))
-```
-
-```{r}
-manzanas <- mutate(manzanas,cat_cobcesac=ifelse(cobcesac=="TRUE",1,0))
+          cat_distanciasubte=as.numeric(cat_distanciasubte),
+          cat_distanciametrobus=as.numeric(cat_distanciametrobus),
+          cat_distanciavenida=as.numeric(cat_distanciavenida),
+          cat_promediom2=as.numeric(cat_promediom2),
+          cat_cobhospitales=ifelse(cobhospitales=="TRUE",2,1),
+          cat_cobcesac=ifelse(cobcesac=="TRUE",2,1))
 ```
 
 Ahora desarrollaremos el índice (Indice 01), considerando las siguientes ponderaciones sobre las variables:
