@@ -581,93 +581,80 @@ manzanas <- manzanas %>%
 
 Ahora desarrollaremos el índice (Indice 01), considerando las siguientes ponderaciones sobre las variables:
 
-- Densidad: 10%, dado que no consideramos que es una variable importante a tener en cuenta
+- Densidad: 10%, dado que no consideramos que es una variable tan determinante a tener en cuenta
 
 - Distancia subte: 15%, con el fin de permitir la accesibilidad a los centros de salud, del personal que atiende a los pacientes
 
 - Distancia Metrobus: 15%, con el fin de permitir la accesibilidad a los centros de salud, del personal que atiende a los pacientes
 
-- Cobertura hospitales: 35%,  es la variable que consideramos más importante, dado que en el caso que a un paciente que se encuentra en el centro de salud,se le agrave el cuadro, se pueda trasladar de forma inmediata a un hospital
+- Cobertura hospitales: 35%,  es la variable que consideramos más importante, dado que, en el caso de que a un paciente vea agravado su cuadro clínico, se encuentra cerca de un hospital y pueda ser trasladado de forma inmediata
 
-- Cobertura Cesac: 15%. Entendiendo que en algunos Cesacs se realizan test a casos sospechosos, en caso que de positivo, es importante que el paciente se traslade caminando hacia el centro de salud, con el fin de evitar que utilice el transporte pública y contagie a otros pasajeros. Por ello, nos interesa que el Cesac esté cenca del centro de salud.
+- Cobertura Cesac: 15%. Entendiendo que en algunos Cesacs se realizan test a casos sospechosos, en caso que de positivo, es importante que el paciente se traslade caminando hacia el centro de salud, con el fin de evitar que utilice el transporte público y contagie a otros pasajeros. Por ello, nos interesa que el Cesac esté cerca del centro de salud.
 
 - Promedio del precio por metro2 por barrio: 10%. Considerando que el Gobierno de la Ciudad no cuenta con muchos fondos, entendemos que esta variable nos va a permitir seleccionar la manzana que más se ajuste al presupuesto
 
+
 ```{r}
-manzanas <- manzanas %>%
-            mutate(I1=cat_densidad*0.1+cat_distanciasubte*0.15+cat_distanciametrobus*0.15+cat_cobhospitales*0.35+cat_cobcesac*0.15,cat_promediom2*0.1,
+indice01 <- manzanas %>%
+            mutate(I1=cat_densidad*0.1+cat_distanciasubte*0.1+cat_distanciametrobus*0.1+cat_distanciavenida*0.1+cat_cobhospitales*0.35+cat_cobcesac*0.15+cat_promediom2*0.1,
                    I1=ifelse(I1>quantile(I1,probs = 0.9,na.rm = TRUE),TRUE,FALSE))
 ```
 
-```{r}
-manzanasI1 <- manzanas %>%
-  filter(I1=="TRUE")
-```
+*Filtramos*
 
+```{r}
+indice01 <- filter(indice01, I1=="TRUE")
+```
 
 ```{r fig.height=10, fig.width=10}
 ggplot() +
   geom_sf(data=manzanas, color="grey60") +
-  geom_sf(data=manzanasI1, fill="hotpink4", alpha=0.75) +
+  geom_sf(data=indice01, fill="hotpink4", alpha=0.75) +
   geom_sf(data=hoteles, color="olivedrab4", size=1)+
   geom_sf(data=hospitales, color="turquoise3")+
   theme_minimal() +
   coord_sf(datum=NA) +
   labs(title="Índice 01",
-       subtitle="Ciudad Autónoma de Buenos Aires",
-       caption= "Fuente: BA DATA y Properati")
+       subtitle="Manzanas",
+       caption= "Fuente: BA DATA y Properati") +
+  theme_void()
 ```
 
-Este mapa nos muestra en color bordó las manzanas,  en las cuales sería correcto colocar los centros de salud considerando las siguientes variables y la ponderación anteriormente mencionada: densidad poblacional, distancia subte, distancia metrobus, cobertura hospital, cobertura Csac y precio promedio de m2 de unidades en alquiler por barrio. 
+Este mapa nos muestra en color bordó las manzanas en las cuales sería conveniente colocar los centros de salud en base a las siguientes variables y la ponderación anteriormente mencionada: densidad poblacional, distancia subte, distancia metrobus, distancia avenidas, cobertura hospital, cobertura Csac y precio promedio de m2 de unidades en alquiler por barrio. 
 
 Ahora bien, en verde, se muestran la distribución de alojamientos para ver su ubicación en relación a las manzanas selectas.
+
 De la misma manera, se visualiza en celeste, los hospitales.
 
+Considerando que un hotel puede que no se encuentre justo en la manzana selecta, pero si cerca, (Cerca =radio de 100m) decidimos conocer la cobertura de los hoteles (cobertura=100m), para que queden las manzanas con hoteles cercanos. Para ello:
 
-Considerando que un hotel puede que no se encuentre justo en la manzana selecta, pero si cerca, (Cerca =radio de 100m) decidimos conocer la cobertura de los hoteles (cobertura=100m), para que queden las manzanas con hoteles cercanos
+1º Calculamos nuevamente el centroide de nuestras manzanas selectas
 
 ```{r}
-coberturahotel <- hoteles %>% 
+manzanasI1centroide <- st_centroid(indice01)
+```
+
+2º Clculamos la cobertura de nuetras manzanas
+
+```{r}
+radiomanzanaI1 <- manzanasI1centroide %>% 
     st_buffer(dist = 100) %>%
     summarise(cobertura=TRUE)
 ```
 
-
-```{r fig.height=10, fig.width=10}
-ggplot() +
-  geom_sf(data=manzanas, color="grey60") +
-  geom_sf(data=manzanasI1,fill="hotpink4", alpha=0.5 ) +
-  geom_sf(data=coberturahotel, fill="olivedrab4", alpha=0.45, size=1)+
-  scale_fill_manual(values = c(NA,"turquoise3")) +
-  guides(fill=FALSE) +
-  theme_minimal() +
-  coord_sf(datum=NA) +
-  labs(title="Índice 01 con cobertura hoteles",
-       subtitle="Ciudad Autónoma de Buenos Aires",
-       caption= "Fuente: BA DATA y Properati")
-```
-
-
-
-
-```{r}
-manzanasI1centroid <- st_centroid(manzanasI1)
-```
-```{r}
-radiomanzanaI1 <- manzanasI1centroid %>% 
-    st_buffer(dist = 100) %>%
-    summarise(cobertura=TRUE)
-```
+3º Unimos al dataset de hoteles la cobertura
 
 ```{r}
 hotelesI1 <-st_join(hoteles, radiomanzanaI1)
 ```
 
+4º Nos quedamos solamente con aquellos hoteles que se encuentren dentro del radio de nuestras manzanas selectas.
+
 ```{r}
 hotelesI1<- filter(hotelesI1, cobertura=="TRUE")
 ```
 
- Ahora graficaremos los hoteles que caen dentro de las manzanas selectas.
+Ahora graficaremos los hoteles que caen dentro de las manzanas selectas.
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
@@ -678,50 +665,81 @@ ggplot()+
        caption= "Fuente: BA DATA y Properati")+
   theme_void()
 ```
+
 En el gráfico anterior, se observa la localización de los hoteles que están ubicados en las manzanas seleccionadas según el Indice 01.
 Ahora bien, entendiendo que al momento de realizar el Indice 01, algunas variables eran dicotómicas (ej: hoteles, Cesacs) y otras no (ej: Metrobus, Subte), ahora haremos un Indice 02 en el que todas las variables serán dicotómicas, para que la ponderación se realice sobre igual cantidad de categorias de cada variable.
 
------------------------------------------------------------------------------
 ```{r}
 quiebresmediana <- c(0,0.5,1)
 ```
 
+```{r}
+manzanas02 <- manzanas %>% 
+            mutate(cat_densidad=cut(densidadPob,breaks = quantile(densidadPob,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
+                   cat_distanciasubte=cut(-distanciasubte,breaks =quantile(-distanciasubte,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
+                   cat_distanciametrobus=cut(-distanciametrobus,breaks = quantile(-distanciametrobus,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
+                   cat_promediom2=cut(-promediometro2,breaks = quantile(-promediometro2,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
+                   cat_distanciavenida=cut(-distanciaavenida,breaks = quantile(-distanciaavenida,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE))
+```
 
 ```{r}
-manzanasI2 <- manzanas %>% 
-            mutate(cat_densidad2=cut(densidadPob,breaks = quantile(densidadPob,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
-                   cat_distanciasubte2=cut(-distanciasubte,breaks =quantile(-distanciasubte,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
-                   cat_distanciametrobus2=cut(-distanciametrobus,breaks = quantile(-distanciametrobus,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE),
-                   cat_promediom22=cut(-promediometro2,breaks = quantile(-promediometro2,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE))
-                   ##cat_distanciavenida=cut(-distanciavenida,breaks = quantile(-distanciavenida,quiebres,na.rm = TRUE ),include.lowest = TRUE))
+manzanas02 <- manzanas02 %>% 
+   mutate(cat_densidad=as.numeric(cat_densidad),
+          cat_distanciasubte=as.numeric(cat_distanciasubte),
+          cat_distanciametrobus=as.numeric(cat_distanciametrobus),
+          cat_distanciavenida=as.numeric(cat_distanciavenida),
+          cat_promediom2=as.numeric(cat_promediom2))
+```
+
+```{r}
+indice02 <- manzanas02 %>%
+            mutate(I1=cat_densidad*0.1+cat_distanciasubte*0.1+cat_distanciametrobus*0.1+cat_distanciavenida*0.1+cat_cobhospitales*0.35+cat_cobcesac*0.15+cat_promediom2*0.1,
+                   I1=ifelse(I1>quantile(I1,probs = 0.9,na.rm = TRUE),TRUE,FALSE))
+```
+
+```{r}
+indice02 <- filter(indice02, I1=="TRUE")
+```
+
+```{r fig.height=10, fig.width=10}
+ggplot() +
+  geom_sf(data=manzanas, color="grey60") +
+  geom_sf(data=indice02, fill="hotpink4", alpha=0.75) +
+  geom_sf(data=hoteles, color="olivedrab4", size=1)+
+  geom_sf(data=hospitales, color="turquoise3")+
+  theme_minimal() +
+  coord_sf(datum=NA) +
+  labs(title="Índice 02",
+       subtitle="Manzanas",
+       caption= "Fuente: BA DATA y Properati") +
+  theme_void()
 ```
 
 
 ```{r}
-manzanasI2<- mutate (manzanasI2,cobhospitales=ifelse(is.na(cobhospitales),"FALSE","TRUE"))
-                           
-```
-
-
-```{r}
-manzanasI2<- mutate(manzanasI2, cat_distanciavenida2=cut(-avenidacercana,breaks = quantile(-distanciavenida2,quiebresmediana,na.rm = TRUE ),include.lowest = TRUE))
-```
-
-
-```{r}
-manzanasI2 <- manzanasI2 %>% 
-   mutate(cat_densidad2=as.numeric(cat_densidad2),
-                   cat_distanciasubte2=as.numeric(cat_distanciasubte2),
-                   cat_distanciametrobus2=as.numeric(cat_distanciametrobus2),
-                   ##cat_distanciavenida=as.numeric(!cat_distanciavenida),
-                   cat_promediom22=as.numeric(cat_promediom22))
-```
-
-
-```{r}
-manzanasI2 <- mutate(manzanasI2,cat_cobhospitales=ifelse(cobhospitales=="TRUE",2,1))
+manzanasI2centroide <- st_centroid(indice02)
 ```
 
 ```{r}
-manzanasI2 <- mutate(manzanasI2,cat_cobcesac=ifelse(cobcesac=="TRUE",2,1))
+radiomanzanaI2 <- manzanasI2centroide %>% 
+    st_buffer(dist = 100) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+hotelesI2 <-st_join(hoteles, radiomanzanaI2)
+```
+
+```{r}
+hotelesI2<- filter(hotelesI2, cobertura=="TRUE")
+```
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_sf(data=manzanas, color="grey60") +
+  geom_sf(data=hotelesI2, color="olivedrab4")+
+  labs(title="Hoteles ubicados en las manzanas selectas a partir del Indice 02",
+       subtitle="Ciudad Autónoma de Buenos Aires",
+       caption= "Fuente: BA DATA y Properati")+
+  theme_void()
 ```
