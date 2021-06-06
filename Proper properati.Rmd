@@ -107,7 +107,7 @@ properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento
 
 *Al ser tantos registros, para asegurarnos de que la base de datos solo contenga valores únicos, aplicaremos la función unique*
 
-````{r}
+```{r}
 properati <- unique(properati)
 ```
 
