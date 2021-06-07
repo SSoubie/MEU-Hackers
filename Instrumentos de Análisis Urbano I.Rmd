@@ -192,9 +192,11 @@ Comenzamos considerando unidades desde 32m2, medida mínima para unidad funciona
 Desde la óptica del mercado inmobiliario, las unidades hasta 75m2 son consideradas medianas y más allá de dicha superficie, son grandes y muy grandes.
 
 ```{r fig.height=5, fig.width=10}
+options(scipen=100)
+
 properati2021 <- mutate(properati2021, superficiecat=factor(superficiecat, levels = c ("Chico", "Mediano", "Grande", "Muy grande")))
 ggplot(data = properati2021) +
-    geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)+
+    geom_boxplot(aes(x=superficiecat, y=metro2, color="salmon"), show.legend = FALSE)+
    labs(title ="Oficinas y departamentos en alquiler de la Ciudad Autónoma de Buenos Aires", 
        caption = "Fuente: Properati",
        x= "Tamaño",
