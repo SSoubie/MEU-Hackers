@@ -89,30 +89,21 @@ hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/D
 
 *Graficamos*
 
-ggplot()+
-  geom_sf(data=barriosCABA, aes (fill=""))+
-  geom_sf(data=coberturacsac, alpha=0.5, aes(fill="Cobertura Cesac"),show.legend=)+
-  geom_sf(data=coberturaHospitales, alpha=0.5,aes(fill="Cobertura Hospitales"),show.legend = )+
-  geom_sf(data=hoteles, size=1.5, aes(color="Hoteles"))+
-  scale_fill_manual(values= c("NA"="white","Cobertura Hospitales"="olivedrab4","Cobertura Cesac"="lightblue4"), name="Referencias",
-                    guide=guide_legend(override.aes=list(linetype="blank", shape=NA)))+
-  scale_colour_manual(values= c("Hoteles"="black"), name= NULL)+
-   labs(title = "Cobertura de centros de salud y ubicación de hoteles",
-       caption = "Fuente: BA DATA")+
-  theme_void()
-
 ```{r fig.height=10, fig.width=10}
 ggplot() + 
-  geom_sf(data=manzanas, fill="NA")+
-  geom_sf(data=hoteles, aes(color="Hoteles"), show.legend= )+
-  geom_sf(data=hospitales,aes(color="Hospitales"), show_legend= )+
-  geom_sf(data=subte,aes(color="Subte"), show.legend= )+
-  scale_color_manual(values= c("Hoteles"="olivedrab4","Hospitales"="salmon","Subte"="lightblue4", name="Referencias",
-                    guide=guide_legend(override.aes=list(linetype="blank", shape=NA))))+
+  geom_sf(data=barriosCABA, aes (fill=""))+
+  geom_sf(data=hoteles, aes(color="Hoteles"), show.legend ="point")+
+  geom_sf(data=hospitales,aes(color="Hospitales"), show.legend ="point")+
+  geom_sf(data=subte,aes(color="Subte"), show.legend ="point")+
+  scale_colour_manual(values= c("Hoteles"="olivedrab4","Hospitales"="hotpink4","Subte"="salmon"), name="Referencias",
+                    guide=guide_legend(override.aes=list(linetype="blank")))+
+  scale_fill_manual(values= c("NA"="white"),name=NULL,
+                  guide=guide_legend(override.aes=list(linetype="blank",shape=NA)))+
   labs(title = "Ubicación de hoteles, estación de subte, hospitales de la Ciudad Autónoma de Buenos Aires ",
       caption = "Fuente: BA DATA")+
   theme_void()
 ```
+
 
 - Aquel que posee el precio de las propiedades en alquiler
 
