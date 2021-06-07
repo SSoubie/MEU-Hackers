@@ -507,7 +507,7 @@ ggplot() +
   geom_sf(data = radiosCensales, aes(fill=densidadPob))+
   labs(title = "Densidad poblacional en la Ciudad Autónoma de Buenos Aires ",
        subtitle = "Por manzana",
-       fill= "habitantes por km2",
+       fill= "Habitantes por km2",
        caption="Fuente: BA DATA")+
   scale_fill_viridis_c()+
   theme_void()
