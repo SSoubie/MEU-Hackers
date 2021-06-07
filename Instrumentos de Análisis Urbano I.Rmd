@@ -33,7 +33,9 @@ library(leaflet)
 library(hereR)
 set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
 ```
-
+```{r}
+options(scipen=100)
+```
 
 Nuestro trabajo consiste en identificar los hoteles con la mejor ubicación para mejorar la capacidad de atención sanitaria de la Ciudad de Buenos Aires (CABA). En consecuencia, utilizaremos distitos datasets (espaciales y no). Estos comprenden:
 
