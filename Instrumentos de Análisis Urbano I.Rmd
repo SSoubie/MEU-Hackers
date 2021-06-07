@@ -291,7 +291,7 @@ ggplot() +
   labs(title ="Alquiler promedio", 
        subtitle = "Por barrio de la Ciudad Autónoma de Buenos Aires",
        caption = "Fuente: Properati",
-       fill="valor de alquiler/m2")+
+       fill="Valor de alquiler/m2")+
   scale_fill_viridis_c() +
   theme_void()
 ```
