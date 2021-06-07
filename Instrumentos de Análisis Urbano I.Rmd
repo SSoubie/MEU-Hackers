@@ -378,18 +378,19 @@ Como hemos comentado anteriormente, las redes de transportes son relevantes para
 Para poder visualizar las paradas de metrobus, estaciones de subte y avenidas de la Ciudad Autónoma de Buenos Aires, graficaremos el siguiente mapa.
 
 
- *LEYENDA*
-
 ```{r fig.height=10, fig.width=10}
 ggplot()+ 
-  geom_sf(data = manzanas, aes (fill = "NA")) +
-  geom_sf(data = manzanacentroide, aes (color = "Centroide de Manzana"), show.legend=)+
+  geom_sf(data = manzanas, aes (fill = ""), size = 0.1, alpha = 0.7) +
+  geom_sf(data = manzanacentroide, aes (color = "Centroide de Manzana"), show.legend="point", size=0.1)+
   geom_sf(data = avenidas, aes (color = "Avenidas"), show.legend =)+
-  geom_sf(data = subte, aes(color = "Subte", show.legend="point"))+
-  geom_sf(data = metrobus, aes (color = "Metrobus)", show.legend="point"))+
-  scale_colour_manual(values = c("NA"= "white", "Centroide de Manzana" = "grey60", "Avenidas"="hotpink4", "Subte"="olivedrab4", "Metrobus"="salmon"),name = NULL,
+  geom_sf(data = subte, aes(color = "Subte"), show.legend="point", size=2)+
+  geom_sf(data = metrobus, aes (color = "Metrobus"), show.legend="point", size=2)+
+  scale_colour_manual(values = c("Centroide de Manzana" = "grey60", "Avenidas"="mediumvioletred", "Subte"="royalblue4", "Metrobus"="orange2"),name = "Referencias",
+                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
+  scale_fill_manual(values = c("NA"= "white"),name = NULL,
                     guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
-  labs(title = "Centros de manzana", 
+  labs(title = "Centros de manzana",
+       subtitle = "Centros de manzana, Avenidas, Estaciones de Subte y Paradas de Metrobus",
        caption = "Fuente: BA DATA")+
   theme_void()
 ```
