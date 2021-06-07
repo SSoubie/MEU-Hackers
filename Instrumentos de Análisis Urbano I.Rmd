@@ -763,10 +763,78 @@ ggplot() +
       caption= "Fuente: BA DATA y Properati")+
   theme_void()
 ```
+
 A partir de esta información, buscaremos los hoteles que se encuentren en estas manzanas, teniendo en cuenta en el dataset "hoteles"
-
-
-
-
-
 ----------------------------------------------------------------------------------------------------------
+
+Podemos ver que las manzanas que arroja nuestro índice ha variado levemente. A partir de aquí, avanzaremos sobre la identificación de los hoteles que se encuentran dentro de las mismas.
+
+```{r}
+manzanasI2centroide <- st_centroid(indice02)
+```
+
+```{r}
+radiomanzanaI2 <- manzanasI2centroide %>% 
+    st_buffer(dist = 100) %>%
+    summarise(cobertura=TRUE)
+```
+
+```{r}
+hotelesI2 <-st_join(hoteles, radiomanzanaI2)
+```
+
+```{r}
+hotelesI2<- filter(hotelesI2, cobertura=="TRUE")
+```
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_sf(data=manzanas, color="grey60") +
+  geom_sf(data=hotelesI2, color="olivedrab4")+
+  labs(title="Hoteles ubicados en las manzanas selectas a partir del Indice 02",
+       subtitle="Ciudad Autónoma de Buenos Aires",
+       caption= "Fuente: BA DATA y Properati")+
+  theme_void()
+```
+
+Al igual con el gráfico de manzanas, los cambios entre hoteles seleccionados son leves. Para ver estás diferencias, graficaremos, primero, las manzanas, y , segundo, los hoteles de ambos índices.
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_sf(data=manzanas, fill="NA", color="grey") +
+  geom_sf(data=indice01, fill="blue", alpha=0.5)+
+  geom_sf(data=indice02, fill = "red", alpha=0.5)+
+  theme_void()
+```
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_sf(data=manzanas, fill="NA", color="grey") +
+  geom_sf(data=hotelesI1, color="blue", alpha=0.5, size=3)+
+  geom_sf(data=hotelesI2, color = "red", alpha=0.5, size=3)+
+  theme_void()
+```
+
+
+```{r}
+indice01 <- select(indice01, -(cat_densidad:cat_cobcesac))
+```
+
+```{r}
+indice02 <- select(indice02, -(cat_densidad:cat_cobcesac))
+```
+
+```{r}
+manzanasindices <- st_intersection(indice01,indice02)
+```
+```{r}
+hotelesindices <- st_intersection(hotelesI1,hotelesI2)
+```
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_sf(data=manzanas, fill="NA", color="grey") +
+  geom_sf(data=manzanasindices, fill="lightblue3")+
+  geom_sf(data=hotelesindices, color = "hotpink4")+
+  theme_void()
+```
