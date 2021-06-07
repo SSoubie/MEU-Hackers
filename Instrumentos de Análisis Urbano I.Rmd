@@ -568,12 +568,14 @@ manzanaselecta <- filter(manzanas, cobhospitales==TRUE & cobcesac==TRUE & densid
 Ahora graficaremos las manzanas que cumplen con estas condiciones y la ubicación de los hoteles de la Ciudad.
 
 
-*LEYENDA*
-
 ```{r fig.height=10, fig.width=10}
-ggplot()+geom_sf(data=manzanas, fill="NA", color="grey60")+
-        geom_sf(data=manzanaselecta, fill="turquoise3")+
-        geom_sf(data=hoteles, color="hotpink4", alpha=0.75)+
+ggplot()+geom_sf(data=manzanas, aes(fill=""), alpha=0.5, size=0.2)+
+        geom_sf(data=manzanaselecta, aes(fill="Manzanas ideales"))+
+        geom_sf(data=hoteles, aes (color="Hoteles"), size=1, show.legend = "point")+
+  scale_colour_manual(values = c(Hoteles="hotpink4"),name = "Referencias",
+                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
+  scale_fill_manual(values = c("Manzanas ideales"= "olivedrab4", "NA"="white"),name = NULL,
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
    labs(title = "Manzanas ideales para la ubicación de un centros de atención",
         subtitle = "Según criterios establecidos",
         caption="Fuente: BA DATA & Properati")+
