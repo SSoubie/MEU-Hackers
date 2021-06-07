@@ -215,7 +215,7 @@ properati2021 <- filter(properati2021, metro2<50000)
 
 ```{r fig.height=5, fig.width=10}
 ggplot(data = properati2021) +
-    geom_boxplot(aes(x=superficiecat, y=metro2), show.legend = FALSE)+
+    geom_boxplot(aes(x=superficiecat, y=metro2, color="salmon"), show.legend = FALSE)+
    labs(title ="Oficinas y departamentos en alquiler de la Ciudad Autónoma de Buenos Aires", 
        caption = "Fuente: Properati",
        x= "Tamaño",
