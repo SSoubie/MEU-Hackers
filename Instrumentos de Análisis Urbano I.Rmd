@@ -443,16 +443,15 @@ A continuación graficaremos las manzanas (Manzanas ideales) que cumplen con las
 -  Que esté a 200m de una avenida.
 
 
-*LEYENDA*
-
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, fill="NA")+
-  geom_sf(data=filter(manzanas, distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200), fill="salmon")+
- 
-  ##labs(title = "Manzanas ideales", 
-      ## subtitle= "Según cercanía a avenidas y las paradas de metrobus y estaciones de subte",
-      ## caption = "Fuente: BA DATA")+
+  geom_sf(data=manzanas, aes (fill=""))+
+  geom_sf(data=filter(manzanas, distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200), aes (fill="Manzanas ideales"))+
+  scale_fill_manual(values = c("NA"= "white", "Manzanas ideales"="olivedrab"),name = "Referencias",
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
+  labs(title = "Manzanas ideales", 
+       subtitle= "Según cercanía a las avenidas, las paradas de Metrobus y las estaciones de Subte",
+       caption = "Fuente: BA DATA")+
   theme_void()
 ```
 
