@@ -445,7 +445,7 @@ A continuación graficaremos las manzanas (Manzanas ideales) que cumplen con las
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, aes (fill=""))+
+  geom_sf(data=manzanas, aes (fill=""), color="gray60")+
   geom_sf(data=filter(manzanas, distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200), aes (fill="Manzanas ideales"))+
   scale_fill_manual(values = c("NA"= "white", "Manzanas ideales"="olivedrab"),name = "Referencias",
                     guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
