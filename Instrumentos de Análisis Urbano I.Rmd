@@ -705,15 +705,18 @@ Ahora graficaremos los hoteles que se encuentran dentro de las manzanas selectas
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, color="grey60") +
-  geom_sf(data=hotelesI1, color="olivedrab4")+
+  geom_sf(data=manzanas, aes (fill=""), color="grey60") +
+  geom_sf(data=hotelesI1, aes (color="Hoteles"))+
+  scale_fill_manual(values = c("NA"="white"),name = NULL, guide = guide_legend(override.aes = list(linetype = "blank", shape = NA)))+
+  scale_colour_manual(values = c(Hoteles="olivedrab4"),name = "Referencias",
+                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
   labs(title="Hoteles ubicados en las manzanas selectas a partir del Indice 01",
        subtitle="Ciudad Autónoma de Buenos Aires",
        caption= "Fuente: BA DATA y Properati")+
   theme_void()
 ```
 
-En el gráfico anterior, se observa la localización de los hoteles que están ubicados en las manzanas seleccionadas según el Indice 01.
+En el gráfico anterior se observa la localización de los hoteles que están ubicados en las manzanas seleccionadas según el Indice 01.
 
 Ahora bien, entendiendo que al momento de realizar el Indice 01, algunas variables eran dicotómicas (ej: hoteles, Cesacs) y otras no (ej: Metrobus, Subte), ahora haremos un Indice 02 en el que todas las variables serán dicotómicas, para que la ponderación se realice sobre igual cantidad de categorias de cada variable. Vale aclarar que mantendremos las mismas ponderaciones (Indice02)
 Para ellos se considerará la madiana (quiebresmediana)
