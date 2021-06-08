@@ -477,7 +477,7 @@ manzanacentroide <- rename(manzanacentroide, "cobhospitales"=cobertura.x,
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data = manzanas, aes (fill=""))+
+  geom_sf(data = manzanas, aes (fill=""), color="gray60")+
   geom_sf(data = filter(manzanacentroide, cobhospitales=="TRUE" & cobcesac=="TRUE"), aes (color="Manzanas ideales"), show.legend = "point")+
    scale_fill_manual(values = c("NA"= "white"),name = NULL,
                     guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
