@@ -802,17 +802,27 @@ Al igual con el gráfico de manzanas, los cambios entre hoteles seleccionados so
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, fill="NA", color="grey") +
-  geom_sf(data=indice01, fill="blue", alpha=0.5)+
-  geom_sf(data=indice02, fill = "red", alpha=0.5)+
+  geom_sf(data=manzanas, aes(fill="NA"))+
+  geom_sf(data=indice1, aes(fill="Hoteles Indice 01", alpha=0.5, size=3), show_legend=)+
+  geom_sf(data=indice2, aes(fill ="Hoteles Indice 02", alpha=0.5, size=3),show_legend=)+
+  scale_fill_manual(values = c("NA"= "white", "Manzanas Indice 01" = "blue", "Manzanas Indice 02"="red"),name = NULL,
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
+    labs(title="Manzanas selectas de los Indices 01 y  02",
+       subtitle="Ciudad Autónoma de Buenos Aires",
+       caption= "Fuente: BA DATA y Properati")+
   theme_void()
 ```
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, fill="NA", color="grey") +
-  geom_sf(data=hotelesI1, color="blue", alpha=0.5, size=3)+
-  geom_sf(data=hotelesI2, color = "red", alpha=0.5, size=3)+
+  geom_sf(data=manzanas, aes(fill="NA"))+
+  geom_sf(data=hotelesI1, aes(color="Hoteles Indice 01", alpha=0.5, size=3), show_legend=)+
+  geom_sf(data=hotelesI2, aes(color ="Hoteles Indice 02", alpha=0.5, size=3),show_legend=)+
+  scale_colour_manual(values = c("NA"= "white", "Hoteles Indice 01" = "blue", "Hoteles Indice 02"="red"),name = NULL,
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
+    labs(title="Manzanas selectas a partir de la combinación entre Indice 01 y  02",
+       subtitle="Ciudad Autónoma de Buenos Aires",
+       caption= "Fuente: BA DATA y Properati")+
   theme_void()
 ```
 
@@ -835,8 +845,8 @@ hotelesindices <- st_intersection(hotelesI1,hotelesI2)
 ```{r fig.height=10, fig.width=10}
 ggplot()+
   geom_sf(data=manzanas, aes(fill="")) +
-  geom_sf(data=manzanasindices, aes(fill="Manzana Indice"), show.legend =  )+
-  geom_sf(data=hotelesindices, aes(color = "Hoteles Indice"), show.legend = )+
+  geom_sf(data=manzanasindices, aes(fill="Manzana Indice"), show.legend = )+
+  geom_sf(data=hotelesindices, aes(color = "Hoteles Indice"), show.legend ="point")+
   scale_fill_manual(values = c("NA"= "white", "Manzana Indice" = "hotpink4"),name =NULL,
                     guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
   scale_colour_manual(values=c("Hoteles Indice"="lightblue4"), name = NULL,
