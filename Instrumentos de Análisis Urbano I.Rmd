@@ -93,7 +93,7 @@ hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/D
 
 ```{r fig.height=10, fig.width=10}
 ggplot() + 
-  geom_sf(data=barriosCABA, aes (fill=""))+
+  geom_sf(data=barriosCABA, aes (fill=""), color="gray60")+
   geom_sf(data=hoteles, aes(color="Hoteles"), show.legend ="point", size=2)+
   geom_sf(data=hospitales,aes(color="Hospitales"), show.legend ="point", size=2)+
   geom_sf(data=subte,aes(color="Subte"), show.legend ="point", size=2)+
