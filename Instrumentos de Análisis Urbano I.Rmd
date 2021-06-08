@@ -346,7 +346,7 @@ La cercanías a centros de salud permitirá un rápido acceso en caso que los ca
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=barriosCABA, aes (fill=""))+
+  geom_sf(data=barriosCABA, aes (fill=""), color="gray60")+
   geom_sf(data=coberturacsac, alpha=0.5, aes(fill="Cobertura Cesac"),show.legend=)+
   geom_sf(data=coberturaHospitales, alpha=0.5,aes(fill="Cobertura Hospitales"),show.legend = )+
   geom_sf(data=hoteles, size=1.5, aes(color="Hoteles"))+
