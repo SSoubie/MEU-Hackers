@@ -652,10 +652,13 @@ A continuación graficaremos las manzanas que cumplen con la ponderación del In
 
 ```{r fig.height=10, fig.width=10}
 ggplot() +
-  geom_sf(data=manzanas, color="grey60") +
-  geom_sf(data=indice01, fill="hotpink4", alpha=0.75) +
-  geom_sf(data=hoteles, color="olivedrab4", size=1)+
-  geom_sf(data=hospitales, color="turquoise3")+
+  geom_sf(data=manzanas, aes (fill= ""), color="grey60") +
+  geom_sf(data=indice01, aes (fill="Manzanas que cumplen condición 01"), alpha=0.75) +
+  geom_sf(data=hoteles, aes (color="Hoteles"), size=1)+
+  geom_sf(data=hospitales, aes (color="Hospitales"), size=1)+
+  scale_fill_manual(values = c("Manzanas que cumplen condición 01"= "hotpink4", "NA"="white"),name = NULL, guide = guide_legend(override.aes = list(linetype = "blank", shape = NA)))+
+  scale_colour_manual(values = c(Hoteles="olivedrab4", Hospitales="orange"),name = "Referencias",
+                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
   theme_minimal() +
   coord_sf(datum=NA) +
   labs(title="Índice 01",
@@ -664,11 +667,11 @@ ggplot() +
   theme_void()
 ```
 
-Este mapa nos muestra en color bordó las manzanas en las cuales sería conveniente colocar los centros de salud en base a las siguientes variables y la ponderación anteriormente mencionada: densidad poblacional, distancia subte, distancia metrobus, distancia avenidas, cobertura hospital, cobertura Csac y precio promedio de m2 de unidades en alquiler por barrio. 
+Este mapa nos muestra en color púrpura las manzanas en las cuales sería conveniente colocar los centros de salud en base a las siguientes variables y la ponderación anteriormente mencionada: densidad poblacional, distancia subte, distancia metrobus, distancia avenidas, cobertura hospital, cobertura Csac y precio promedio de m2 de unidades en alquiler por barrio. 
 
 Ahora bien, en verde, se muestran la distribución de alojamientos para ver su ubicación en relación a las manzanas selectas.
 
-De la misma manera, se visualiza en celeste, los hospitales.
+De la misma manera, se visualiza en naranja, los hospitales.
 
 Considerando que un hotel puede que no se encuentre justo en la manzana selecta, pero si cerca, (Cerca =radio de 100m) decidimos conocer la cobertura de los hoteles (cobertura=100m), para que queden las manzanas con hoteles cercanos. Para ello:
 
