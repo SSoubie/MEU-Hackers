@@ -834,8 +834,15 @@ hotelesindices <- st_intersection(hotelesI1,hotelesI2)
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, fill="NA", color="grey") +
-  geom_sf(data=manzanasindices, fill="lightblue3")+
-  geom_sf(data=hotelesindices, color = "hotpink4")+
+  geom_sf(data=manzanas, aes(fill="")) +
+  geom_sf(data=manzanasindices, aes(fill="Manzana Indice"), show.legend =  )+
+  geom_sf(data=hotelesindices, aes(color = "Hoteles Indice"), show.legend = )+
+  scale_fill_manual(values = c("NA"= "white", "Manzana Indice" = "hotpink4"),name =NULL,
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
+  scale_colour_manual(values=c("Hoteles Indice"="lightblue4"), name = NULL,
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
+  labs(title="Hoteles ubicados en las manzanas selectas a partir de la combinación entre Indice 01 y  02",
+       subtitle="Ciudad Autónoma de Buenos Aires",
+       caption= "Fuente: BA DATA y Properati")+
   theme_void()
 ```
