@@ -754,15 +754,18 @@ indice02 <- manzanas02 %>%
 indice02 <- filter(indice02, I1=="TRUE")
 ```
 
-A continuación se graficarán las manzanas (bordó) que responden a la ponderación del Indice02, los hospitales (celeste) los hoteles (verde) de la Ciudad de Buenos Aires.
+A continuación se graficarán las manzanas (bordó) que responden a la ponderación del Indice02, los hospitales (naranja) y los hoteles (verde) de la Ciudad de Buenos Aires.
 A partir de analizar las observaciones que arroja este dataset (indice02= 997 observaciones), vemos que son menos manzanas que las del Indice01 (1147 0bservaciones).
 
 ```{r fig.height=10, fig.width=10}
 ggplot() +
-  geom_sf(data=manzanas, color="grey60") +
-  geom_sf(data=indice02, fill="hotpink4", alpha=0.75) +
-  geom_sf(data=hoteles, color="olivedrab4", size=1)+
-  geom_sf(data=hospitales, color="turquoise3")+
+  geom_sf(data=manzanas, aes (fill=""), color="grey60") +
+  geom_sf(data=indice02, aes (fill="Manzanas que cumplen condición 02"), alpha=0.75) +
+  geom_sf(data=hoteles, aes (color="Hoteles"), size=1)+
+  geom_sf(data=hospitales, aes (color="Hospitales"), size=1)+
+  scale_fill_manual(values = c("Manzanas que cumplen condición 02"= "hotpink4", "NA"="white"), name= NULL, guide = guide_legend(override.aes = list(linetype = "blank", shape = NA)))+
+  scale_colour_manual(values = c(Hoteles="olivedrab4", Hospitales="orange"), name= "Referencias",
+                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
   theme_minimal() +
   coord_sf(datum=NA) +
   labs(title="Índice 02",
