@@ -790,8 +790,10 @@ hotelesI2<- filter(hotelesI2, cobertura=="TRUE")
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, color="grey60") +
-  geom_sf(data=hotelesI2, color="olivedrab4")+
+  geom_sf(data=manzanas, aes(color="")) +
+  geom_sf(data=hotelesI2, aes(color="Hoteles Indice 2"), show.legend =)+
+  scale_colour_manual(values = c("NA"= "grey60", "Hoteles Indice 2" ="olivedrab4"),name = NULL,
+                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
   labs(title="Hoteles ubicados en las manzanas selectas a partir del Indice 02",
        subtitle="Ciudad Autónoma de Buenos Aires",
        caption= "Fuente: BA DATA y Properati")+
