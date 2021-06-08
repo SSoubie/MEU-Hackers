@@ -380,7 +380,7 @@ Para poder visualizar las paradas de metrobus, estaciones de subte y avenidas de
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+ 
-  geom_sf(data = manzanas, aes (fill = ""), size = 0.1, alpha = 0.7) +
+  geom_sf(data = manzanas, aes (fill = ""), size = 0.1, color="gray60") +
   geom_sf(data = manzanacentroide, aes (color = "Centroide de Manzana"), show.legend="point", size=0.1)+
   geom_sf(data = avenidas, aes (color = "Avenidas"), show.legend =)+
   geom_sf(data = subte, aes(color = "Subte"), show.legend="point", size=2)+
