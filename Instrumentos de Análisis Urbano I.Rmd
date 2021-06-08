@@ -569,7 +569,7 @@ Ahora graficaremos las manzanas que cumplen con estas condiciones y la ubicació
 
 
 ```{r fig.height=10, fig.width=10}
-ggplot()+geom_sf(data=manzanas, aes(fill=""), alpha=0.5, size=0.2)+
+ggplot()+geom_sf(data=manzanas, aes(fill=""), color="gray60", size=0.2)+
         geom_sf(data=manzanaselecta, aes(fill="Manzanas ideales"))+
         geom_sf(data=hoteles, aes (color="Hoteles"), size=1, show.legend = "point")+
   scale_colour_manual(values = c(Hoteles="hotpink4"),name = "Referencias",
