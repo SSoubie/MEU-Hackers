@@ -1,7 +1,7 @@
 ---
 title: "Instrumentos de Análisis Urbano I"
 author: "Florencia Kihara,  Victoria Marco y Santiago Soubie"
-date: "10/6/2021"
+date: "11/6/2021"
 output: html_document
 ---
 
@@ -920,6 +920,10 @@ ggplot()+
 ```
 ## **BONUS TRACK: DISTANCIA A LOS DETECTAR**
 
+A partir del mapa anterior, se evidencian, marcados en color púrpura, los hoteles (hotel selecto) que cumplen con ambos índices (índice 01 e índice 02). Ahora bien, con el fin de poder hacer una selección más acotada, tanto de las manzanas como de los hoteles, incorporaremos el dato de la geolocalización de los centros DetectAr. Esto se hará tomando el DetectAR como centro de un polígono, cuyo radio será igual a la distancia que puede ser recorrida caminanado (transport mode: pedestrian) en 15 minutos. La importancia de que el traslado se realice caminando radica en que es la forma más segura que el paciente COVID positivo posee como alternativa de movilidad accesible, ya que de esta manera, tiene menor posibilidad de contagiar a terceros.
+
+Para tal fin, realizaremos las siguientes operaciones: 
+
 ```{r}
 detectAR <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/operativo-detectar.geojson")
 ```
@@ -928,6 +932,7 @@ detectAR <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/
 detectAR <- st_transform(detectAR, crs = st_crs(hotelesindices))
 ```
 
+Con el fin de poder utilizar la herramienta "map" en los próximos pasos, habilitamos una nueva librería: hereR. 
 ```{r}
 library(hereR)
 ```
@@ -936,6 +941,7 @@ library(hereR)
 set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
 ```
 
+A continuación, graficamos en un mismo mapa, los centros DetectAR junto con las manzanas y los hoteles selectos (es decir, que cumplen con el índice 1 y el índice 2). 
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
@@ -955,8 +961,7 @@ ggplot()+
 ```
 
 ```{r}
-isocronosdetectar <- map(1:nrow(detectAR),function(x) {isoline(detectAR[x,], transport_mode = "pedestrian",range_type = "time",range = 60*15)
-})
+isocronosdetectar <- map(1:nrow(detectAR),function(x) {isoline(detectAR[x,], transport_mode = "pedestrian",range_type = "time",range = 60*15)})
 ```
 
 ```{r}
@@ -976,6 +981,7 @@ leaflet(isocronosdetectarjuntospoligonos %>% st_transform(4326)) %>%
   addTiles() %>% 
   addPolygons()
 ```
+En el mapa anterior se visualizan los polígonos cuyo centro son los DetectAr y los radios son los 15 minutos de caminata. 
 
 ```{r}
 isocronosdetectarjuntospoligonos <- st_transform(isocronosdetectarjuntospoligonos, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
@@ -990,6 +996,13 @@ isocronosdetectarjuntospoligonos <- st_as_sf(isocronosdetectarjuntospoligonos) %
 ```{r}
 st_crs(isocronosdetectarjuntospoligonos)
 ```
+Habiendo obtenido los polígonos, los mapearemos junto con: 
+
+- La totalidad de las manzanas de la Ciudad;
+
+- Las manzanas selectas, que cumplen con las condiciones de los índices 01 y 02; y
+
+- Los hoteles selectos, que cumplen con las condiciones de los índices 01 y 02. 
 
 ```{r}
 manzanasdetectAR <- st_join(manzanas,st_as_sf(isocronosdetectarjuntospoligonos))
@@ -1022,10 +1035,31 @@ hotelesindicesdetectar <- filter(hotelesindicesdetectar, cobertura.y=="TRUE")
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, fill=NA)+
-  geom_sf(data = manzanasindicesdetectAR, fill="blue", alpha=0.5)+
-  geom_sf(data = manzanasindices, fill="red", alpha=0.5)+
-  geom_sf(data = hotelesindicesdetectar, color="orange")+
-  geom_sf(data=isocronosdetectarjuntospoligonos, fill="green", color="red", alpha=0.5)+
-  theme_void()
+  geom_sf(data=manzanas, aes (fill=NA), color= "grey60") +
+  geom_sf(data=isocronosdetectarjuntospoligonos, aes (fill= "Polígonos DetectAR"), alpha=0.25)+
+  geom_sf(data = manzanasindices, aes(fill="Manzana selecta (índice 01 y 02)"))+
+    geom_sf(data = manzanasindicesdetectAR, aes (fill="Manzana selecta con cercanía DetectAR"))+
+  geom_sf(data = hotelesindicesdetectar, aes(color = "Hotel selecto con cercanía DetectAR"))+
+  scale_fill_manual(values = c("Manzana selecta (índice 01 y 02)" = "turquoise", "Manzana selecta con cercanía DetectAR"="olivedrab4","Polígonos DetectAR"="orange"), name=NULL)+
+  scale_colour_manual(values=c("Hotel selecto con cercanía DetectAR"="salmon", "Polígonos DetectAR"="red"),name="Referencia", guide = guide_legend(override.aes = list(linetype = "blank"))) +
+  labs(title="Ubicación de hoteles según polígonos DetectAr",
+       subtitle="sobre la base de las manzanas selectas según índice 1 y 2",
+       caption= "Fuente: BA DATA & Properati")+
+  theme_void()+
+  theme(plot.title = element_text(hjust=0.07, face = "bold"),
+      plot.caption = element_text(size=10),
+      plot.subtitle = element_text(size = 12, hjust = 0.07))
 ```
+
+```{r}
+InfoHotelesSeleccionados <- select(hotelesindicesdetectar, 2:3)
+head(InfoHotelesSeleccionados, 66)
+```
+
+
+## **Conclusión**
+
+A partir del análisis realizado de la información obtenida a partir de las bases de datos de BA Data y Properati, podemos concluir que las manzanas de mayor viabilidad para el alquiler de algún inmueble, en base a las variables consideradas a lo largo del trabajo, son las "manzanas selectas con cercanía DetectAR" (graficadas en el último mapa en color oliva). 
+Ahora bien, los posibles inmuebles, ubicados en dichas manzanas, que podrían ser alquilados por el Gobierno de la Ciudad de Buenos Aires serían los hoteles mapeados en color salmón (en el último mapa) y listados en el último "head" (65 hoteles). 
+A modo de sugerencia, si tuviéramos que elegir los hoteles más idoneos para alojar a los pacientes positivos COVID, lo haríamos considerando la cantidad de habitaciones y camas disponibles en cada uno, con el fin de optimizar los recursos humanos que estarán a cargo de atender a dichos pacientes. 
+
