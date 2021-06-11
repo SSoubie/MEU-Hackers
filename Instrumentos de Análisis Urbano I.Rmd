@@ -31,7 +31,14 @@ Antes de arrancar con nuestro trabajo, cargamos las librerías que vamos a utili
 ```{r}
 library(tidyverse)
 library(sf)
+library(leaflet)
+library(hereR)
 ```
+
+```{r}
+set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
+```
+
 ```{r}
 options(scipen=100)
 ```
@@ -40,7 +47,7 @@ options(scipen=100)
 
 Nuestro trabajo consiste en identificar las manzanas de mayor viabilidad para el alquiler de algún inmueble que permita mejorar la capacidad de atención sanitaria de la Ciudad de Buenos Aires (CABA). Particularmente, creemos que estos inmuebles deben ser destinados a acoger a los pacientes de COVID-19 con sintomologías leves. Con este fin, utilizaremos distitos datasets (espaciales y no). Estos comprenden:
 
-- Aquellos vinculados a la organización territorial de la CABA.
+- Aquellos datasets vinculados a la organización territorial de la CABA.
 
 ```{r}
 barriosCABA <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/mapaCABA.geojson") 
@@ -54,7 +61,7 @@ radiosCensales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers
 manzanas <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/manzanas.geojson")
 ```
 
-- Aquellos relacionados a la planta del transporte.
+- Aquellos datasets relacionados a la planta del transporte.
 
 ```{r}
 calles <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/callejero.geojson")
@@ -73,13 +80,13 @@ metrobus <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/
 summary(metrobus$METROBUS)
 ```
 
-*Si observamos dentro del dataset "metrobus", veremos algunas paradas por fuera de la CABA. Vamos a quitarlas*
+*Si observamos dentro del dataset "metrobus", veremos algunas paradas por fuera de la CABA. Vamos a quitarlas.*
 
 ```{r}
 metrobus <- filter(metrobus, METROBUS!="Metrobus Norte - Av Maipú (provincia)")
 ```
 
-- Aquellos ligados a infraestructuras de salud
+- Aquellos datasets ligados a infraestructuras de salud.
 
 ```{r}
 hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/hospitales.geojson")
@@ -89,34 +96,32 @@ hospitales <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/mai
 csac <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/csac.geojson")
 ```
 
-- Aquel que contiene los alojamientos de la CABA
+- Aquel dataset que contiene los alojamientos de la CABA.
 
 ```{r}
 hoteles <- read_sf("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/alojamientos.geojson")
 ```
 
-*Graficamos*
+*Graficamos.*
 
 ```{r fig.height=10, fig.width=10}
 ggplot() + 
-  geom_sf(data=barriosCABA, aes (fill=""), color="gray60")+
-  geom_sf(data=hoteles, aes(color="Hoteles"), show.legend ="point", size=2, alpha=0.75)+
-  geom_sf(data=hospitales,aes(color="Hospitales"), show.legend ="point", size=2, alpha=0.75)+
-  geom_sf(data=csac, aes(color="Csacs"), show.legend = "point", size=2, alpha=0.75)+
-  geom_sf(data=subte,aes(color="Subte"), show.legend ="point", size=2, alpha=0.75)+
+  geom_sf(data=barriosCABA, fill=NA, color="gray60")+
+  geom_sf(data=hoteles, aes(color="Hoteles"), size=2, alpha=0.75)+
+  geom_sf(data=hospitales,aes(color="Hospitales"), size=2, alpha=0.75)+
+  geom_sf(data=csac, aes(color="Csacs"), size=2, alpha=0.75)+
+  geom_sf(data=subte,aes(color="Subte"), size=2, alpha=0.75)+
   geom_sf(data = metrobus, aes(color="Metrobús"), show.legend = "point", size=2, alpha=0.75)+
-  scale_colour_manual(values= c("Hoteles"="olivedrab4","Hospitales"="hotpink4","Subte"="salmon", "Csacs"="lightblue4", "Metrobús"="gold2"), name="Referencias",
-                    guide=guide_legend(override.aes=list(linetype="blank")))+
-  scale_fill_manual(values= c("NA"="white"),name=NULL,
-                  guide=guide_legend(override.aes=list(linetype="blank",shape=NA)))+
+  scale_colour_manual(values= c("Hoteles"="olivedrab4","Hospitales"="hotpink4","Subte"="salmon", "Csacs"="lightblue4", "Metrobús"="gold2"))+
   labs(title = "Infraestructuras de la Ciuad Autónoma de Buenos Aires",
-      caption = "Fuente: BA DATA")+
+       color = "Referencias",
+       caption = "Fuente: BA DATA")+
   theme_void()+
   theme(plot.title = element_text(size = 16),
         plot.caption = element_text(size = 10))
 ```
 
-- Aquel que posee el precio de las propiedades en alquiler.
+- Aquel dataset que posee el precio de las propiedades en alquiler.
 
 ```{r}
 properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento de Analisis Urbano/TP/Datasets/properati.csv",
@@ -124,7 +129,7 @@ properati <- read.csv("C:/Users/Santi/Desktop/Santi/Ciencia de Datos/Instrumento
                       encoding = "UTF-8")
 ```
 
-*Al ser tantos registros, para asegurarnos de que la base de datos solo contenga valores únicos, aplicaremos la función unique*
+*Al ser tantos registros, para asegurarnos de que la base de datos solo contenga valores únicos, aplicaremos la función "unique".*
 
 ```{r}
 properati <- unique(properati)
@@ -146,7 +151,7 @@ properati2021 <- properati %>%
   select(-start_date, -end_date, -mes, -dia, -l4, -l5, -l6, -price, -currency)
 ```
 
-Teniendo en cuenta que el objetivo final del trabajo es definir dónde se deberían instalar los centros de atención a pacientes Covid positivos leves, optamos por quedarnos unicamente con los registros correspondientes a "Departamentos" y "Oficinas", ya que consideramos que son el tipo de producto que permite albergar a muchas personas en un mismo edificio, procurando la mayor eficiencia posible del espacio y los recursos humanos para la atención de los pacientes.
+Teniendo en cuenta que el objetivo final del trabajo es definir dónde se deberían instalar los centros de atención a pacientes Covid positivos leves, optamos por quedarnos unicamente con los registros correspondientes a "Departamentos" y "Oficinas", ya que consideramos que son el tipo de producto que permite albergar a muchas personas en un mismo edificio, procurando la mayor eficiencia posible del espacio y los recursos humanos para la atención de los mismas.
 
 ```{r}
 properati2021 <- filter(properati2021, property_type %in% c("Departamento", "Oficina"))
@@ -182,7 +187,7 @@ quiebres <- c(0,0.2,0.4,0.6,0.8,1)
 properati2021 <- mutate(properati2021, catmetro2=cut(metro2,breaks = quantile(metro2,quiebres,na.rm = TRUE, dig.lab = 5),include.lowest = TRUE))
 ```
 
-*Modificamos las etiquetas para que sea más simple comprenderlas*
+*Modificamos las etiquetas para que sea más simple comprenderlas.*
 
 ```{r}
 properati2021 <- mutate(properati2021, catmetro2=as.numeric(catmetro2),
@@ -212,13 +217,13 @@ ggplot(data = properati2021) +
   theme_light()
 ```
 
-A partir de este boxplot, podemos ver que valores extremos sesgan nuestra muestra. Por este motivo, el siguiente paso será quitar todos aquellos casos en los que el valor del m2 supere los 50.000 pesos.
+A partir de este boxplot, podemos ver que valores extremos sesgan nuestra muestra. Por este motivo, el siguiente paso será quitar todos aquellos casos en los que el valor del m2 supere los $50.000.
 
 ```{r}
 properati2021 <- filter(properati2021, metro2<50000)
 ```
 
-*Graficamos nuevamente*
+*Graficamos nuevamente.*
 
 ```{r fig.height=5, fig.width=10}
 ggplot(data = properati2021) +
@@ -241,7 +246,7 @@ Por último, procederemos a componer un mapa que nos permita visualizar la ubica
 properati2021 <- filter(properati2021, !(lon=="NA" & lat=="NA"))
 ```
 
-2º Transformaremos nuestro dataset en uno espacial.
+2º. Transformaremos nuestro dataset en uno espacial.
 
 ```{r}
 properati2021 <- st_as_sf(properati2021,
@@ -249,7 +254,7 @@ properati2021 <- st_as_sf(properati2021,
                            crs = 4326)
 ```
 
-*Graficamos para ver nuestro resultado hasta el momento*
+*Graficamos para ver nuestro resultado parcial.*
 
 ```{r fig.width=10, fig.height=10}
 properati2021 <- mutate(properati2021, catmetro2=factor(catmetro2, levels = c ("Muy bajo", "Bajo", "Medio", "Alto", "Muy alto")))
@@ -262,11 +267,15 @@ ggplot()+
        caption = "Fuente: Properati",
        color="Valor alquiler (m2)")+
   theme_void()+
-  theme(plot.title = element_text(size = 16),
+  theme(plot.title = element_text(size = 16, hjust = 0.1),
         plot.caption = element_text(size = 10))
 ```
 
-3º Como podemos observar en nuestro dataset, la variable "barrios" contiene más barrios que los que son oficialmente reconocidos. Para poder asignar los registros de forma precisa, unimos nuestro dataset con el dataset "barriosCABA".
+3º. Como podemos observar en nuestro dataset, la variable "barrios" contiene más barrios que los que son oficialmente reconocidos. Para poder asignar los registros de forma precisa, unimos nuestro dataset con el dataset "barriosCABA".
+
+```{r}
+summary(properati2021$barrios)
+```
 
 ```{r}
 properati2021<- st_join(barriosCABA,properati2021)
@@ -282,7 +291,7 @@ filter(properati2021, barrio=="VERSALLES")
 properati2021 <- filter(properati2021, !(barrio=="VERSALLES" & barrios=="Catalinas"))
 ```
 
-4º Agrupamos los registros y calculamos la media del m2 por barrio.
+4º. Agrupamos los registros y calculamos la media del m2 por barrio.
 
 ```{r}
 properati2021barrios <- properati2021 %>% 
@@ -291,7 +300,7 @@ properati2021barrios <- properati2021 %>%
   mutate(promediometro2=round(promediometro2, 2))
 ```
 
-*Graficamos*
+*Graficamos.*
 
 ```{r fig.width=10, fig.height=10}
 ggplot() +
@@ -354,9 +363,6 @@ coberturacsac <- csac %>%
 
 La cercanías a centros de salud permitirá un rápido acceso en circunstancias en la que los casos se agraven. Este punto lo retomaremos más adelate. Por ahora, solo graficamos.
 
-scale_colour_manual(values = c("Centroide de Manzana" = "grey60", "Avenidas"="mediumvioletred", "Subte"="royalblue4", "Metrobus"="orange2"),name = "Referencias",
-                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
-
 ```{r fig.height=10, fig.width=10}
 ggplot()+
   geom_sf(data=barriosCABA, fill="NA", color="gray60")+
@@ -364,9 +370,10 @@ ggplot()+
   geom_sf(data=coberturaHospitales, alpha=0.5,aes(fill="Cobertura Hospitales"), show.legend = TRUE )+
   geom_sf(data=hoteles, size=1.5, aes(color="Hoteles"))+
   scale_fill_manual(values= c("Cobertura Hospitales"="olivedrab4","Cobertura Cesac"="lightblue4"), name=NULL , guide=guide_legend(override.aes=list(linetype="blank", shape=NA)))+
-  scale_colour_manual(values= c("Hoteles"="black"), name = "Referencias",  guide = guide_legend(override.aes = list(linetype = "blank")))+
+  scale_colour_manual(values= c("Hoteles"="black"))+
    labs(title = "Cobertura de los centros de salud",
        caption = "Fuente: BA DATA",
+       color="Referencias",
        fill="")+
   theme_void()+
   theme(plot.title = element_text(size = 16, hjust = 0.1, face = "bold"),
@@ -381,25 +388,26 @@ Realacionado con el punto anterior, otra de las condiciones que debe cumplir nue
 manzanacentroide <- st_centroid(manzanas)
 ```
 
-2º Hacemos un dataset que solo contenga las avenidas de CABA.
+2º. Hacemos un dataset que solo contenga las avenidas de CABA.
 
 ```{r}
 avenidas <- filter(calles, tipo_c=="AVENIDA")
 ```
 
-*Graficamos para ver los centroides de manzana*
+*Graficamos para ver los centroides de manzana.*
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+ 
   geom_sf(data = manzanas, fill = NA, size = 0.1, color="gray60") +
-  geom_sf(data = manzanacentroide, aes (color = "Centroide de Manzana"), show.legend="point", size=0.1)+
-  geom_sf(data = avenidas, aes (color = "Avenidas"), show.legend =)+
-  geom_sf(data = subte, aes(color = "Estación de Subte"), show.legend="point", size=2)+
-  geom_sf(data = metrobus, aes (color = "Parada de Metrobus"), show.legend="point", size=2)+
+  geom_sf(data = manzanacentroide, aes (color = "Centroide de Manzana"), size=0.1)+
+  geom_sf(data = avenidas, aes (color = "Avenidas"))+
+  geom_sf(data = subte, aes(color = "Estación de Subte"), size=2)+
+  geom_sf(data = metrobus, aes (color = "Parada de Metrobus"), size=2)+
   scale_colour_manual(values = c("Centroide de Manzana" = "grey60", "Avenidas"="mediumvioletred", "Estación de Subte"="royalblue4", "Parada de Metrobus"="orange2"),name = "Referencias",
                     guide = guide_legend(override.aes = list(linetype = "blank"))) +
   labs(title = "Centros de manzana",
        subtitle = "En relación al sistema vial",
+       color="Referencias",
        caption = "Fuente: BA DATA")+
   theme_void()+
   theme(plot.title = element_text(size = 16, hjust = 0.1, face = "bold"),
@@ -407,7 +415,7 @@ ggplot()+
         plot.subtitle = element_text(size = 12, hjust = 0.1))
 ```
 
-3º Calculamos la distancia desde los centroides de manzana a los distintos puntos de transporte.
+3º. Calculamos la distancia desde los centroides de manzana a los distintos puntos de transporte.
 
 ```{r}
 distanciavenida <- st_distance(manzanacentroide, avenidas)
@@ -417,7 +425,7 @@ distanciasubte <- st_distance(manzanacentroide, subte)
 distanciametrobus <- st_distance(manzanacentroide, metrobus)
 ```
 
-4º Como el paso anterior nos devolvió todas las distacias posibles desde nuestros centroides de  manzana a todos los puntos de transporte, solo nos vamos a quedar con las de menor tamaño.
+4º. Como el paso anterior nos devolvió todas las distacias posibles desde nuestros centroides de  manzana a todos los puntos de transporte, solo nos vamos a quedar con las de menor tamaño.
 
 ```{r}
 avenidacercana <- apply(distanciavenida,1,function(x) min(x))
@@ -436,7 +444,7 @@ subtecercano <- round(subtecercano, 0)
 metrobuscercano <- round(metrobuscercano, 0)
 ```
 
-5º Agregamos las distancias al dataset de manzanas
+5º. Agregamos las distancias al dataset de manzanas
 
 ```{r}
 manzanas <- mutate(manzanas, distanciaavenida=avenidacercana,
@@ -444,9 +452,9 @@ manzanas <- mutate(manzanas, distanciaavenida=avenidacercana,
                    distanciametrobus=metrobuscercano)
 ```
 
-En resumen, hemos decidido considerar las distancias a avenidas, a la red de metrobus y a la red de subte para garantizarla  accesibilidad en diversos medios de transportes
+En resumen, hemos decidido considerar las distancias a avenidas, a la red de metrobus y a la red de subte para garantizar la accesibilidad en diversos medios de transportes.
 
-A continuación graficaremos las manzanas (Manzanas ideales) que cumplen con las condiciones que llamaremos "Condición 00":
+A continuación graficaremos las manzanas (Manzanas ideales) que cumplen con las siguientes condiciones:
 
 -  Que esté a 500m de una parada de Metrobus,
 
@@ -458,9 +466,9 @@ A continuación graficaremos las manzanas (Manzanas ideales) que cumplen con las
 ggplot()+
   geom_sf(data=manzanas, fill="NA", color="gray60")+
   geom_sf(data=filter(manzanas, distanciametrobus<=500 & distanciasubte<=500 & distanciaavenida<=200), aes (fill="Manzanas ideales"))+
-  scale_fill_manual(values = c("Manzanas ideales"="olivedrab"),name = "Referencias",
-                    guide = guide_legend(override.aes = list(linetype = "blank", shape = NA))) +
-  labs(title = "Manzanas ideales", 
+  scale_fill_manual(values = c("Manzanas ideales"="olivedrab")) +
+  labs(title = "Manzanas ideales",
+       fill = "Referencias",
        subtitle= "Según cercanía a las avenidas y las redes de Metrobús y de Subte",
        caption = "Fuente: BA DATA")+
   theme_void()+
@@ -471,9 +479,9 @@ ggplot()+
 
 Retomemos la cuestión de la cobertura de los hospitales y Cesacs.
 
-Nosotros solo nos interesa quedarnos con aquellas manzanas que se encuentren a menos de 1000 mts de los hospitales, y a 1500 mts de los Cesacs. Para averguar cuales son:
+Nosotros solo nos interesa quedarnos con aquellas manzanas que se encuentren a menos de 1000 mts de los hospitales y a 1500 mts de los Cesacs. Para averguar cuales son:
 
-1º Unimos el dataset de centroides de manzana con los de cobertura de hospitales y Cesacs. 
+1º. Unimos los datasets de cobertura de hospitales y Cesacs al de centroides de manzana. 
 
 ```{r}
 manzanacentroide <- st_join(manzanacentroide, coberturaHospitales)
@@ -497,10 +505,10 @@ manzanasCobSalud <- filter(manzanasCobSalud, cobhospitales=="TRUE" & cobcesac=="
 ggplot()+
   geom_sf(data = manzanas, fill=NA, color="gray60")+
   geom_sf(data = manzanasCobSalud, aes (fill="Manzanas ideales"), show.legend =)+
-   scale_fill_manual(values = c("Manzanas ideales"= "lightblue2"),name = "Referencias",
-                    guide = guide_legend(override.aes = list(linetype = "blank"))) +
+   scale_fill_manual(values = c("Manzanas ideales"= "lightblue2")) +
   labs(title = "Manzanas ideales", 
        subtitle= "Según cobertura de centros de salud",
+       fill="Referencias",
        caption = "Fuente: BA DATA")+
   theme_void()+
   theme(plot.title = element_text(size = 16, hjust = 0.055, vjust = 0.1, face = "bold"),
@@ -510,9 +518,9 @@ ggplot()+
 
 Otro factor que tendremos en cuenta es el de densidad poblacional.
 
-Nuestro objetivo es seleccionar aquellas manzanas donde haya una gran cantidad personas a la redonda a fin de que los alojamientos estén cerca de donde más se los necesita. Para calcular la misma: 
+Nuestro objetivo es seleccionar aquellas manzanas donde haya una gran cantidad personas a fin de que los alojamientos estén cerca de donde más se los necesita. Para calcular la misma: 
 
-1º Creamos una columna que contenga la población por km2 de cada radio censal.
+1º. Creamos una columna que contenga la población por km2 de cada radio censal.
 
 ```{r}
 radiosCensales <- mutate(radiosCensales, densidadPob=round(POBLACION/AREA_KM2, 2))
@@ -534,7 +542,7 @@ ggplot() +
       plot.subtitle = element_text(size = 14, hjust = 0.0155))
 ```
 
-2º Unimos el dataset de los radios censales al de manzanas centroides.
+2º. Unimos el dataset de los radios censales al de manzanas centroides.
 
 ```{r}
 manzanacentroide <- st_join(manzanacentroide,radiosCensales)
@@ -559,7 +567,7 @@ duplicados <- duplicated(manzanas, incomparables = FALSE)
 summary(duplicados)
 ```
 
-*Efectivamente, algunos registros fueron duplicados. Por ello, procederemos  a quedarnos solo con los valores únicos*
+*Efectivamente, algunos registros fueron duplicados. Por ello, procederemos  a quedarnos solo con los valores únicos.*
 
 ```{r}
 manzanas <- unique(manzanas)
@@ -612,18 +620,18 @@ ggplot()+geom_sf(data=manzanas, fill="NA", color="gray60", size=0.2)+
         theme_void()+
   theme(plot.title = element_text(size = 16, hjust = 0.1, vjust = 0.1, face = "bold"),
       plot.caption = element_text(size=10),
-      plot.subtitle = element_text(size = 14, hjust = 0.032))
+      plot.subtitle = element_text(size = 14, hjust = 0.031))
 ```
 
-Al analizar el mapa, se puede observar que las manzanas que cumplen con las condiciones estipuladas son escasas. Esto va en detrimento de la escala que se quiere alcanzar para alivianar el sistema de salud. Por ello, es necesaria una nueva manera de abordar nuestras condiciones.
+**Conclusión:**Al analizar el mapa, se puede observar que las manzanas que cumplen con las condiciones estipuladas son escasas y se encuentran concentradas geograficamente. Esto va en detrimento de la escala que se quiere alcanzar para alivianar el sistema de salud. Por ello, es necesaria una nueva manera de abordar nuestras condiciones.
 
 ## **TERCERA PARTE: CONSTRUYENDO UN ÍNDICE**
 
-Entendiendo que los parámetros que seleccionamos en este trabajo pueden ser valorados de distinta manera, hemos decidido construir un índice que pondere dichas variables.
+Entendiendo que los parámetros que seleccionamos en este trabajo pueden ser valorados de distinta manera, hemos decidido construir un índice que pondere nuestras variables.
  
-Antes de avanzar en esta dirección, debemos realizar algunas operaciones sobre las variables previamente mencionadas.
+Justamente, antes de avanzar en esta dirección, debemos realizar algunas operaciones sobre las variables previamente mencionadas.
 
-1º Considerando los quiebres indicados con anterioridad, dividiremos las variables en quintiles para normalizar los valores
+1º. Considerando los quiebres indicados con anterioridad, dividiremos las variables en quintiles para normalizar los valores.
 
 ```{r}
 manzanas <- manzanas %>% 
@@ -639,7 +647,7 @@ manzanas<- mutate (manzanas, cobhospitales=ifelse(is.na(cobhospitales),"FALSE","
                    cobcesac=ifelse(is.na(cobcesac),"FALSE","TRUE"))
 ```
 
-2º Luego, a cada categoría le asignaremos un valor numérico.
+2º. Luego, a cada categoría le asignaremos un valor numérico.
 
 ```{r}
 manzanas <- manzanas %>% 
@@ -652,22 +660,21 @@ manzanas <- manzanas %>%
           cat_cobcesac=ifelse(cobcesac=="TRUE",2,1))
 ```
 
-Ahora desarrollaremos el índice (Indice 01), considerando las siguientes ponderaciones sobre las variables:
+Ahora desarrollaremos el índice (Índice 01), considerando las siguientes ponderaciones sobre las variables:
 
-- **Cobertura hospitales: 30%**. Que se encuentre en las inmediaciones de un hotel es el factor más relevante a tener en cuenta. Ello se debe a que, en el caso de que a un paciente vea agravado su cuadro clínico, se encuentre cerca de un hospital y pueda ser trasladado de forma inmediata.
+- **Cobertura hospitales: 30%**. Que nuestra manzana se encuentre en las inmediaciones de un hospital es el factor más relevante a tener en cuenta. Ello se debe a que, en el caso de que a un paciente vea agravado su cuadro clínico, se encuentre cerca de un centro de salud y pueda ser trasladado de forma inmediata.
 
 - **Cobertura Cesac: 15%**. En la medida que los Cesacs realizan test a casos sospechosos, resulta valioso que, ante casos positivos, los paciente puedan ser trasladados en taxi o a pie a los centros de alojamiento.
 
--**Distancia avenidas: 15%**, con el fin de facilitar la accesibilidad a los centros de salud por parte de personal que atiende a los pacientes y las ambulancias.
+-**Distancia avenidas: 15%**, con el fin de facilitar la accesibilidad a los centros de salud por parte de personal que atiende a los pacientes y a las ambulancias.
 
-- **Distancia subte: 10%**, con el fin de facilitar la accesibilidad a los centros de salud por parte de personal que atiende a los pacientes
+- **Distancia subte: 10%**, con el fin de facilitar la accesibilidad a los centros de salud por parte de personal que atiende a los pacientes.
 
 - **Distancia Metrobus: 10%**, con el fin de facilitar la accesibilidad a los centros de salud por parte de personal que atiende a los pacientes.
 
 - **Promedio del precio por metro2 por barrio: 10%**. Considerando que el Gobierno de la Ciudad cuenta con fondos limitamos, entendemos que esta variable nos va a permitir seleccionar la manzana que más se ajuste al presupuesto.
 
 - **Densidad: 10%**. Nos permite identificar aquellas manzanas que aglutinan a una gran cantidad de personas, con el motivo de que los alojamientos permitan aliviar la presión existente.
-
 
 ```{r}
 indice01 <- manzanas %>%
@@ -681,7 +688,7 @@ indice01 <- manzanas %>%
 indice01 <- filter(indice01, I1=="TRUE")
 ```
 
-*Graficamos aquellas manzanas que obtuvieron los valores más altos del índice01*
+*Graficamos aquellas manzanas que obtuvieron los valores más altos del índice 01*
 
 ```{r fig.height=10, fig.width=10}
 ggplot() +
@@ -696,24 +703,24 @@ ggplot() +
        subtitle="Manzanas",
        caption= "Fuente: BA DATA & Properati") +
   theme_void()+
-   theme(plot.title = element_text(size = 20, hjust = 0.1, vjust = 0.2, face = "bold"),
+   theme(plot.title = element_text(size = 18, hjust = 0.1, vjust = 0.3, face = "bold"),
       plot.caption = element_text(size=10),
       plot.subtitle = element_text(size = 12, hjust = 0.1))
 ```
 
 Este mapa nos muestra en color turquesa las manzanas en las cuales sería conveniente colocar los centros de alojamiento en base a las variables y la ponderación anteriormente estipuladas: densidad poblacional, distancia al subte, al metrobus y a las avenidas, cobertura de hospitales y Csacs, y el precio promedio de m2 de unidades en alquiler por barrio. 
 
-Ahora bien, en violeta se muestra los alojamientos para ver su ubicación en relación a las manzanas selectas.
+Por otra parte, en violeta se muestra los alojamientos, a fin de ver su ubicación en relación a las manzanas selectas.
 
 Considerando que un hotel puede que no se encuentre justo en la manzana selecta, pero si cerca (dentro de un radio de 100 m), decidimos conocer aquellos alojamientos que se ubican dentro de este rango. Para ello:
 
-1º Calculamos nuevamente el centroide de nuestras manzanas selectas.
+1º. Calculamos nuevamente el centroide de nuestras manzanas selectas.
 
 ```{r}
 manzanasI1centroide <- st_centroid(indice01)
 ```
 
-2º Calculamos la cobertura de nuetras manzanas.
+2º. Calculamos la cobertura de nuetras manzanas.
 
 ```{r}
 radiomanzanaI1 <- manzanasI1centroide %>% 
@@ -721,13 +728,13 @@ radiomanzanaI1 <- manzanasI1centroide %>%
     summarise(cobertura=TRUE)
 ```
 
-3º Unimos al dataset de hoteles la cobertura.
+3º. Unimos al dataset de hoteles la cobertura.
 
 ```{r}
 hotelesI1 <-st_join(hoteles, radiomanzanaI1)
 ```
 
-4º Nos quedamos solamente con aquellos hoteles que se encuentren dentro del radio de nuestras manzanas selectas.
+4º. Nos quedamos solamente con aquellos hoteles que se encuentren dentro del radio de nuestras manzanas selectas.
 
 ```{r}
 hotelesI1<- filter(hotelesI1, cobertura=="TRUE")
@@ -748,11 +755,9 @@ ggplot()+
   theme(plot.caption = element_text(size=10))
 ```
 
-En el gráfico anterior, se observa la localización de los hoteles que están ubicados en las manzanas seleccionadas según el Indice 01.
+Ahora bien, entendiendo que al momento de realizar el Indice 01 se otorgaba un valor numérico a cada una de las categorías de las variables, y cada variable tenía un número diferente de categorías, haremos un nuevo índice (Índice 02) en el que todas las variables serán dicotómicas a fin de que la ponderación se realice sobre bases equivalentes. Con ello en mente:
 
-Ahora bien, entendiendo que al momento de realizar el Indice 01 se otorgaba un valor numérico a cada una de las categorías de las variables, y cada variable tenía un número diferente de categorías, haremos un nuevo índice (Indice 02) en el que todas las variables serán dicotómicas a fin de que la ponderación se realice sobre bases equivalentes. Con ello en mente:
-
-1º Creamos un nuevo vector donde se establezcan la mediana.
+1º. Creamos un nuevo vector donde se establezcan la mediana.
 
 ```{r}
 quiebresmediana <- c(0,0.5,1)
@@ -788,7 +793,7 @@ indice02 <- manzanas02 %>%
 indice02 <- filter(indice02, I2=="TRUE")
 ```
 
-A primera vista, podemos observar que el numero de observaciones que arroja este dataset (997), es menor que el del índice 01 (1147).
+A primera vista, podemos observar que el numero de observaciones que arroja este dataset (997), es menor que el del Índice 01 (1147).
 
 *Graficamos*
 
@@ -805,7 +810,7 @@ ggplot() +
      subtitle="Manzanas",
       caption= "Fuente: BA DATA & Properati")+
   theme_void()+
-    theme(plot.title = element_text(size = 20, hjust = 0.1, vjust = 0.2, face = "bold"),
+    theme(plot.title = element_text(size = 18, hjust = 0.1, vjust = 0.2, face = "bold"),
       plot.caption = element_text(size=10),
       plot.subtitle = element_text(size = 12, hjust = 0.1))
 ```
@@ -830,10 +835,12 @@ hotelesI2 <-st_join(hoteles, radiomanzanaI2)
 hotelesI2<- filter(hotelesI2, cobertura=="TRUE")
 ```
 
+*Graficamos*
+
 ```{r fig.height=10, fig.width=10}
 ggplot()+
   geom_sf(data=manzanas, fill=NA, color="grey60") +
-  geom_sf(data=hotelesI2, aes(color="Hoteles"), show.legend =)+
+  geom_sf(data=hotelesI2, aes(color="Hoteles"))+
   scale_colour_manual(values = c("Hoteles" ="hotpink4")) +
   labs(title="Hoteles ubicados en las manzanas selectas a partir del Índice 02",
        subtitle="Ciudad Autónoma de Buenos Aires",
@@ -853,7 +860,7 @@ ggplot()+
   geom_sf(data=indice01, aes(fill="Manzanas Índice 01"), alpha=0.5)+
   geom_sf(data=indice02, aes(fill ="Manzanas Índice 02"), alpha=0.5)+
   scale_fill_manual(values = c("Manzanas Índice 01" = "blue", "Manzanas Índice 02"="red"))+
-   labs(title="Manzanas selectas de los Indices 01 y 02",
+   labs(title="Manzanas selectas de los Índices 01 y 02",
        subtitle="Ciudad Autónoma de Buenos Aires",
        fill="Referencias",
        caption= "Fuente: BA DATA & Properati")+
@@ -872,14 +879,14 @@ ggplot()+
     labs(title="Hoteles del Índice 01 y el Índice 02",
        subtitle="Ciudad Autónoma de Buenos Aires",
        color="Referencias",
-       caption= "Fuente: BA DATA y Properati")+
+       caption= "Fuente: BA DATA & Properati")+
   theme_void()+
   theme(plot.title = element_text(size = 16, hjust = 0.083, vjust = 0.2, face = "bold"),
       plot.caption = element_text(size=10),
       plot.subtitle = element_text(size = 12, hjust = 0.07))
 ```
 
-Frente a esta situación, hemos decidido tomar ambos índices y quedarnos con las manzanas, *ergo*, los alojamientos comunes entre ambos. Para ello:
+Frente a esta situación, hemos decidido tomar ambos índices y quedarnos solo con las manzanas, *ergo*, los alojamientos comunes entre ambos. Para ello:
 
 1º. Volvemos equilavelentes nuestros datasets.
 
@@ -912,53 +919,61 @@ ggplot()+
   scale_colour_manual(values=c("Hotel selecto"="hotpink4"), name="Referencia") +
   labs(title="¿Dónde podemos ubicar nuestros alojamientos para mejorar la capacidad de atención sanitaria de la CABA?",
        subtitle="Manzanas y hoteles",
-       caption= "Fuente: BA DATA y Properati")+
+       caption= "Fuente: BA DATA & Properati")+
   theme_void()+
     theme(plot.title = element_text(face = "bold"),
       plot.caption = element_text(size=10),
       plot.subtitle = element_text(size = 12, hjust = 0.07))
 ```
+
+```{r}
+nrow(manzanasindices)
+```
+
+```{r}
+nrow(hotelesindices)
+```
+
+**Conclusión:** De acuerdo a los parámetros establecidos, es posible afirmar que en la CABA existen 765 manzanas y 104 alojamientos que servirían para aliviar el sistema de salud de la ciudad.
+
 ## **BONUS TRACK: DISTANCIA A LOS DETECTAR**
 
-A partir del mapa anterior, se evidencian, marcados en color púrpura, los hoteles (hotel selecto) que cumplen con ambos índices (índice 01 e índice 02). Ahora bien, con el fin de poder hacer una selección más acotada, tanto de las manzanas como de los hoteles, incorporaremos el dato de la geolocalización de los centros DetectAr. Esto se hará tomando el DetectAR como centro de un polígono, cuyo radio será igual a la distancia que puede ser recorrida caminanado (transport mode: pedestrian) en 15 minutos. La importancia de que el traslado se realice caminando radica en que es la forma más segura que el paciente COVID positivo posee como alternativa de movilidad accesible, ya que de esta manera, tiene menor posibilidad de contagiar a terceros.
+A partir del mapa anterior, se evidencian, marcados en color púrpura, los hoteles (hotel selecto) que cumplen con ambos índices (índice 01 e índice 02). Ahora bien, con el fin de poder hacer una selección más acotada, tanto de las manzanas como de los hoteles, incorporaremos el dato de la geolocalización de los centros DetectAr. Esto se hará tomando el DetectAR como centro de un polígono, cuyo radio será igual a la distancia que puede ser recorrida caminanado en 15 minutos. La importancia de que el traslado se realice caminando radica en que es la forma más segura que el paciente COVID positivo posee como alternativa de movilidad accesible, ya que de esta manera, tiene menor posibilidad de contagiar a terceros.
 
 Para tal fin, realizaremos las siguientes operaciones: 
+
+1º. Abriremos el dataset qeu contienen la localización de los detectAR.
 
 ```{r}
 detectAR <- st_read("https://raw.githubusercontent.com/SSoubie/MEU-Hackers/main/Datasets/operativo-detectar.geojson")
 ```
 
+2º. Aplicaremos un sistema de coordenadas equivalente con el de los otros datasets de este trabajo.
+
 ```{r}
 detectAR <- st_transform(detectAR, crs = st_crs(hotelesindices))
 ```
 
-Con el fin de poder utilizar la herramienta "map" en los próximos pasos, habilitamos una nueva librería: hereR. 
-```{r}
-library(hereR)
-```
-
-```{r}
-set_key("pcWH0YNYi1G1eqMvAM7fjHWMvqNOaKL6yprw1aMNCeU")
-```
-
-A continuación, graficamos en un mismo mapa, los centros DetectAR junto con las manzanas y los hoteles selectos (es decir, que cumplen con el índice 1 y el índice 2). 
+*A continuación, graficamos en un mismo mapa, los centros DetectAR junto con las manzanas y los hoteles selectos (es decir, que cumplen con el índice 1 y el índice 2).* 
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
   geom_sf(data=manzanas, fill=NA, color= "grey60") +
   geom_sf(data=manzanasindices, aes(fill="Manzana selecta"))+
   geom_sf(data=hotelesindices, aes(color = "Hotel selecto"))+
-  geom_sf(data=detectAR, aes(color="DetectAR"))+
+  geom_sf(data=detectAR, aes(color="DetectAR"), size=2)+
   scale_fill_manual(values = c("Manzana selecta" = "turquoise"), name=NULL)+
   scale_colour_manual(values=c("Hotel selecto"="hotpink4", "DetectAR"="orange"), name="Referencia") +
   labs(title="Ubicación centros DetectAR",
        subtitle="con respecto a manzanas y hoteles selectos",
        caption= "Fuente: BA DATA & Properati")+
   theme_void()+
-    theme(plot.title = element_text(hjust=0.07, face = "bold"),
+    theme(plot.title = element_text(size=16, hjust=0.07, face = "bold"),
       plot.caption = element_text(size=10),
       plot.subtitle = element_text(size = 12, hjust = 0.07))
 ```
+
+3º. Estableceremos los radios desde los que se puede llegar caminando desde un detectAR en 15 minutos o menos.
 
 ```{r}
 isocronosdetectar <- map(1:nrow(detectAR),function(x) {isoline(detectAR[x,], transport_mode = "pedestrian",range_type = "time",range = 60*15)})
@@ -972,37 +987,28 @@ isocronosdetectarjuntos <- do.call(rbind,isocronosdetectar)
 isocronosdetectarjuntospoligonos <-  st_union(isocronosdetectarjuntos)
 ```
 
-```{r}
-library(leaflet)
-```
+*Graficamos para ver los polígonos*
 
 ```{r}
 leaflet(isocronosdetectarjuntospoligonos %>% st_transform(4326)) %>% 
   addTiles() %>% 
   addPolygons()
 ```
-En el mapa anterior se visualizan los polígonos cuyo centro son los DetectAr y los radios son los 15 minutos de caminata. 
+
+4º. Al datasets de distancias caminadas en 15 min. atribuimos el mismo sistema de coordenadas que utilizamos en el resto de los datasets espaciales de este trabajo.
 
 ```{r}
 isocronosdetectarjuntospoligonos <- st_transform(isocronosdetectarjuntospoligonos, crs="+proj=tmerc +lat_0=-34.6297166 +lon_0=-58.4627 +k=1 +x_0=100000 +y_0=100000 +ellps=intl +units=m +no_defs")
 ```
+
+5º. Trasnformamos nuestra lista en un objeto espacial que englobe a todos los radios.
 
 ```{r}
 isocronosdetectarjuntospoligonos <- st_as_sf(isocronosdetectarjuntospoligonos) %>% 
                                       mutate(cobertura=TRUE)
 ```
 
-
-```{r}
-st_crs(isocronosdetectarjuntospoligonos)
-```
-Habiendo obtenido los polígonos, los mapearemos junto con: 
-
-- La totalidad de las manzanas de la Ciudad;
-
-- Las manzanas selectas, que cumplen con las condiciones de los índices 01 y 02; y
-
-- Los hoteles selectos, que cumplen con las condiciones de los índices 01 y 02. 
+6º. Buscamos las manzanas que se encuentran a 15 min. o menos de un detectAR.
 
 ```{r}
 manzanasdetectAR <- st_join(manzanas,st_as_sf(isocronosdetectarjuntospoligonos))
@@ -1011,6 +1017,25 @@ manzanasdetectAR <- st_join(manzanas,st_as_sf(isocronosdetectarjuntospoligonos))
 ```{r}
 manzanasdetectAR <- manzanasdetectAR %>% mutate(cobertura=ifelse(is.na(cobertura),FALSE,TRUE))
 ```
+
+*Graficamos*
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_sf(data=filter(manzanasdetectAR, cobertura=="FALSE"), aes(fill="Manzanas a más de '15"), color=NA)+
+  geom_sf(data=filter(manzanasdetectAR, cobertura=="TRUE"), aes(fill="Manzanas a '15 min o menos"), color=NA)+
+  scale_fill_manual(values = c("Manzanas a más de '15" = "blue", "Manzanas a '15 min o menos" = "red"))+
+  labs(title="Cobertura centros DetectAR",
+       subtitle="a pie",
+       fill="Referencias",
+       caption= "Fuente: BA DATA")+
+  theme_void()+
+    theme(plot.title = element_text(size=16, hjust=0.07, face = "bold"),
+      plot.caption = element_text(size=10),
+      plot.subtitle = element_text(size = 14, hjust = 0.05))
+```
+
+Dentro de estas manzanas, buscamos las manzanas selectas producto (intersección entre índices 01 y 02) que se enceuntren al iterior de dicho rango.
 
 ```{r}
 manzanasindicesdetectAR <- st_join(manzanasindices,st_as_sf(isocronosdetectarjuntospoligonos))
@@ -1024,6 +1049,8 @@ manzanasindicesdetectAR <- manzanasindicesdetectAR %>% mutate(cobertura=ifelse(i
 manzanasindicesdetectAR <- filter(manzanasindicesdetectAR, cobertura=="TRUE")
 ```
 
+Ahora, buscamos los hoteles selectos (de la combinación de los índices 01 y 02) que estén a 15 min o menos de un detectAR.
+
 ```{r}
 hotelesindicesdetectar <- st_join(hotelesindices, st_as_sf(isocronosdetectarjuntospoligonos))
 ```
@@ -1032,34 +1059,40 @@ hotelesindicesdetectar <- st_join(hotelesindices, st_as_sf(isocronosdetectarjunt
 hotelesindicesdetectar <- filter(hotelesindicesdetectar, cobertura.y=="TRUE")
 ```
 
+*Graficamos*
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_sf(data=manzanas, aes (fill=NA), color= "grey60") +
+  geom_sf(data=manzanas, fill=NA, color= "grey60") +
   geom_sf(data=isocronosdetectarjuntospoligonos, aes (fill= "Polígonos DetectAR"), alpha=0.25)+
   geom_sf(data = manzanasindices, aes(fill="Manzana selecta (índice 01 y 02)"))+
     geom_sf(data = manzanasindicesdetectAR, aes (fill="Manzana selecta con cercanía DetectAR"))+
   geom_sf(data = hotelesindicesdetectar, aes(color = "Hotel selecto con cercanía DetectAR"))+
-  scale_fill_manual(values = c("Manzana selecta (índice 01 y 02)" = "turquoise", "Manzana selecta con cercanía DetectAR"="olivedrab4","Polígonos DetectAR"="orange"), name=NULL)+
-  scale_colour_manual(values=c("Hotel selecto con cercanía DetectAR"="salmon", "Polígonos DetectAR"="red"),name="Referencia", guide = guide_legend(override.aes = list(linetype = "blank"))) +
-  labs(title="Ubicación de hoteles según polígonos DetectAr",
-       subtitle="sobre la base de las manzanas selectas según índice 1 y 2",
+  scale_fill_manual(values = c("Manzana selecta (índice 01 y 02)" = "turquoise", "Manzana selecta con cercanía DetectAR"="olivedrab4","Polígonos DetectAR"="orange"))+
+  scale_colour_manual(values=c("Hotel selecto con cercanía DetectAR"="salmon", "Polígonos DetectAR"="red")) +
+  labs(title="¿Dónde podemos ubicar nuestros alojamientos para mejorar la capacidad de atención sanitaria de la CABA?",
+       subtitle="Según distancias caminables en 15 min o menos desde un detectAR ",
+       fill="",
+       color="Referencias",
        caption= "Fuente: BA DATA & Properati")+
   theme_void()+
-  theme(plot.title = element_text(hjust=0.07, face = "bold"),
+  theme(plot.title = element_text( face = "bold"),
       plot.caption = element_text(size=10),
       plot.subtitle = element_text(size = 12, hjust = 0.07))
 ```
 
 ```{r}
-InfoHotelesSeleccionados <- select(hotelesindicesdetectar, 2:3)
-head(InfoHotelesSeleccionados, 66)
+nrow(manzanasindicesdetectAR)
+```
+
+```{r}
+hotelesindicesdetectar %>% select(2:3) %>% 
+head(66)
 ```
 
 
 ## **Conclusión**
 
-A partir del análisis realizado de la información obtenida a partir de las bases de datos de BA Data y Properati, podemos concluir que las manzanas de mayor viabilidad para el alquiler de algún inmueble, en base a las variables consideradas a lo largo del trabajo, son las "manzanas selectas con cercanía DetectAR" (graficadas en el último mapa en color oliva). 
-Ahora bien, los posibles inmuebles, ubicados en dichas manzanas, que podrían ser alquilados por el Gobierno de la Ciudad de Buenos Aires serían los hoteles mapeados en color salmón (en el último mapa) y listados en el último "head" (65 hoteles). 
-A modo de sugerencia, si tuviéramos que elegir los hoteles más idoneos para alojar a los pacientes positivos COVID, lo haríamos considerando la cantidad de habitaciones y camas disponibles en cada uno, con el fin de optimizar los recursos humanos que estarán a cargo de atender a dichos pacientes. 
+A partir del análisis de las bases de datos de BA Data y Properati, podemos concluir que las manzanas de mayor viabilidad para el alquiler de algún inmueble, de acuerdo con los paraámetros establecidos a lo largo del trabajo, son las "manzanas selectas con cercanía DetectAR" (graficadas en el último mapa en color oliva), las que se contabilizan en 549. 
 
+Ahora bien, los posibles inmuebles, ubicados en dichas manzanas, que podrían ser alquilados por el Gobierno de la Ciudad de Buenos Aires serían los hoteles mapeados en color salmón (en el último mapa) y listados en el último "head" (65 hoteles). 
